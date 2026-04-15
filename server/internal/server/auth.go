@@ -7,12 +7,10 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/z3vxo/nyx/internal/config"
 )
 
-const (
-	USER = "test"
-	PASS = "test"
-)
+// todo, setup config file, add these
 
 func authMiddleWare(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -28,7 +26,7 @@ func authMiddleWare(next http.Handler) http.Handler {
 			if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, fmt.Errorf("incorrect siging method")
 			}
-			return []byte("changem"), nil
+			return []byte(config.Cfg.JwtSecret), nil
 		})
 
 		if err != nil || !token.Valid {
@@ -40,7 +38,7 @@ func authMiddleWare(next http.Handler) http.Handler {
 }
 
 func CheckLogin(user, pass string) bool {
-	return user == USER && pass == PASS
+	return user == config.Cfg.User && pass == config.Cfg.Passwd
 
 }
 
