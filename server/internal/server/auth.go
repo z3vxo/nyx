@@ -15,7 +15,8 @@ func authMiddleWare(next http.Handler) http.Handler {
 		authToken := r.Header.Get("Authorization")
 
 		if authToken == "" {
-			http.Error(w, "missing token", http.StatusUnauthorized)
+			SendJSONError(w, "missing token", http.StatusUnauthorized)
+
 			return
 		}
 
@@ -28,7 +29,8 @@ func authMiddleWare(next http.Handler) http.Handler {
 		})
 
 		if err != nil || !token.Valid {
-			http.Error(w, "invalid token", http.StatusUnauthorized)
+			SendJSONError(w, "invalid token", http.StatusUnauthorized)
+
 			return
 		}
 		next.ServeHTTP(w, r)

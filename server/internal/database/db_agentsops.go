@@ -24,7 +24,7 @@ type Agents struct {
 	Agent []Agent `json:"agents"`
 }
 
-func Nyx_ListAgents() ([]byte, error) {
+func Db_ListAgents() ([]byte, error) {
 
 	qeuery := `SELECT code_name, username, hostname, external_ip, internal_ip, is_elevated, pid, process_path, windows_version, last_checkin FROM agents`
 
@@ -56,4 +56,16 @@ func Nyx_ListAgents() ([]byte, error) {
 	}
 	return res, nil
 
+}
+
+func ResolveCodename(name string) (string, error) {
+	query := `SELECT guid FROM agents WHERE code_name = ?`
+	var guid string
+	err := db.QueryRow(query, name).Scan(&guid)
+
+	if err != nil {
+		return "", err
+	}
+
+	return guid, nil
 }
