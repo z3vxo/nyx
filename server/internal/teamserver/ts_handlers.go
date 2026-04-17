@@ -98,6 +98,15 @@ func ts_CommandNewHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{"status": "OK"})
 }
 
+// @Summary      Delete a queued command by task ID
+// @Tags         commands
+// @Accept       json
+// @Produce      json
+// @Param        body  body      TaskDelete  true  "Task to delete"
+// @Success      200   {object}  map[string]string
+// @Failure      500   {object}  ErrorResponse
+// @Security     BearerAuth
+// @Router       /ts/rest/commands/delete [post]
 func ts_CommandDeleteHandler(w http.ResponseWriter, r *http.Request) {
 	var task TaskDelete
 

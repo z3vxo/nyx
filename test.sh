@@ -1,7 +1,8 @@
 #!/bin/bash
 
 
-token=$(curl http://localhost:3000/rest/login -s -d '{"user":"nyx", "passwd":"nyxpwd"}' | jq -r '.token')
+token=$(curl http://localhost:50050/ts/rest/login -s -d '{"user":"kronos", "passwd":"kronospwd"}' | jq -r '.token')
+
 
 #curl -s http://localhost:3000/rest/agents -s -H "Authorization: Bearer $token" | jq
 
@@ -13,14 +14,21 @@ token=$(curl http://localhost:3000/rest/login -s -d '{"user":"nyx", "passwd":"ny
 # }
 case "$1" in
     resolve)
-        curl -s http://localhost:3000/rest/agents/resolve/ted_kaz -v -s -H "Authorization: Bearer $token" | jq
+        curl -s "http://localhost:50050/ts/rest/agents/resolve/$2"  -H "Authorization: Bearer $token" | jq
         ;;
     list)
-        curl -s http://localhost:3000/rest/agents/list -s -H "Authorization: Bearer $token" | jq
+        curl -s http://localhost:50050/ts/rest/agents/list -s -H "Authorization: Bearer $token" | jq
         ;;
     insert)
-        curl -s http://localhost:3000/rest/commands/new  -d '{"guid":"1122", "type":1, "task_id":"1111-11111", "param_1":"test"}' -s -H "Authorization: Bearer $token" | jq
+        curl -s http://localhost:50050/ts/rest/commands/new  -d '{"guid":"1122", "type":1, "task_id":"1111-11111", "param_1":"test"}' -s -H "Authorization: Bearer $token" | jq
+        ;;
+    delete_cmd)
+        curl -s http://localhost:50050/ts/rest/commands/delete  -d '{"task_id":""}' -s -H "Authorization: Bearer $token" | jq
+        ;;
+    sse)
+        curl -N http://localhost:50050/ts/events -H "Authorization: Bearer $token"
         ;;
     *)
+
         echo "need option"
 esac

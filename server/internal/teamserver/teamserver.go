@@ -3,25 +3,12 @@ package teamserver
 import (
 	"context"
 	"fmt"
-	"net"
 	"net/http"
-	"sync"
 	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/z3vxo/kronos/internal/config"
 )
-
-type Broker struct {
-	Channels map[string]chan string
-	mu       sync.RWMutex
-}
-
-type TeamServer struct {
-	Listener   net.Listener
-	httpServer *http.Server
-	SSE        *Broker
-}
 
 func NewTeamServer() *TeamServer {
 	return &TeamServer{
@@ -61,6 +48,10 @@ func (ts *TeamServer) Start() error {
 
 			r.Post("/rest/commands/new", ts_CommandNewHandler)
 			r.Post("/rest/commands/delete", ts_CommandDeleteHandler)
+
+			//r.Get("/rest/listeners/list", ts_ListListener)
+			//r.Post("/rest/listeners/start, ts_StartListenerHandler)
+			//r.Post("/rest/listeners/stop, ts_StopListenerHandler)
 			//
 			// r.Post("/listeners/start, nyx_StartListenerHandler)
 			// r.Post("/listeners/stop, nyx_StopListenerHandler)

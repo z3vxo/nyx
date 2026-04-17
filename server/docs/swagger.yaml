@@ -1,0 +1,218 @@
+basePath: /
+definitions:
+  database.Agent:
+    properties:
+      code_name:
+        type: string
+      ex_ip:
+        type: string
+      hostname:
+        type: string
+      in_ip:
+        type: string
+      is_elevated:
+        type: boolean
+      last_checkin:
+        type: integer
+      pid:
+        type: integer
+      proc_path:
+        type: string
+      username:
+        type: string
+      winver:
+        type: string
+    type: object
+  database.Agents:
+    properties:
+      agents:
+        items:
+          $ref: '#/definitions/database.Agent'
+        type: array
+      total:
+        type: integer
+    type: object
+  teamserver.ErrorResponse:
+    properties:
+      error:
+        type: string
+    type: object
+  teamserver.TaskDelete:
+    properties:
+      task_id:
+        type: integer
+    type: object
+  teamserver.TaskEntry:
+    properties:
+      guid:
+        type: string
+      param_1:
+        type: string
+      param_2:
+        type: string
+      task_id:
+        type: string
+      type:
+        type: integer
+    type: object
+  teamserver.UserLogin:
+    properties:
+      passwd:
+        type: string
+      user:
+        type: string
+    type: object
+host: localhost:50050
+info:
+  contact: {}
+  description: Kronos C2 teamserver REST API
+  title: Kronos Teamserver API
+  version: "1.0"
+paths:
+  /ts/rest/agents/list:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/database.Agents'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/teamserver.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List all agents
+      tags:
+      - agents
+  /ts/rest/agents/resolve/{codename}:
+    get:
+      parameters:
+      - description: Agent codename
+        in: path
+        name: codename
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/teamserver.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/teamserver.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/teamserver.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Resolve agent codename to GUID
+      tags:
+      - agents
+  /ts/rest/commands/delete:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Task to delete
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/teamserver.TaskDelete'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/teamserver.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete a queued command by task ID
+      tags:
+      - commands
+  /ts/rest/commands/new:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Command payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/teamserver.TaskEntry'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/teamserver.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Queue a new command for an agent
+      tags:
+      - commands
+  /ts/rest/login:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Login credentials
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/teamserver.UserLogin'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/teamserver.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/teamserver.ErrorResponse'
+      summary: Authenticate and receive a JWT
+      tags:
+      - auth
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

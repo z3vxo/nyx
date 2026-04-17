@@ -1,0 +1,344 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "Kronos C2 teamserver REST API",
+        "title": "Kronos Teamserver API",
+        "contact": {},
+        "version": "1.0"
+    },
+    "host": "localhost:50050",
+    "basePath": "/",
+    "paths": {
+        "/ts/rest/agents/list": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "agents"
+                ],
+                "summary": "List all agents",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/database.Agents"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/teamserver.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/ts/rest/agents/resolve/{codename}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "agents"
+                ],
+                "summary": "Resolve agent codename to GUID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Agent codename",
+                        "name": "codename",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/teamserver.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/teamserver.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/teamserver.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/ts/rest/commands/delete": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "commands"
+                ],
+                "summary": "Delete a queued command by task ID",
+                "parameters": [
+                    {
+                        "description": "Task to delete",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/teamserver.TaskDelete"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/teamserver.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/ts/rest/commands/new": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "commands"
+                ],
+                "summary": "Queue a new command for an agent",
+                "parameters": [
+                    {
+                        "description": "Command payload",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/teamserver.TaskEntry"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/teamserver.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/ts/rest/login": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Authenticate and receive a JWT",
+                "parameters": [
+                    {
+                        "description": "Login credentials",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/teamserver.UserLogin"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/teamserver.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/teamserver.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "database.Agent": {
+            "type": "object",
+            "properties": {
+                "code_name": {
+                    "type": "string"
+                },
+                "ex_ip": {
+                    "type": "string"
+                },
+                "hostname": {
+                    "type": "string"
+                },
+                "in_ip": {
+                    "type": "string"
+                },
+                "is_elevated": {
+                    "type": "boolean"
+                },
+                "last_checkin": {
+                    "type": "integer"
+                },
+                "pid": {
+                    "type": "integer"
+                },
+                "proc_path": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                },
+                "winver": {
+                    "type": "string"
+                }
+            }
+        },
+        "database.Agents": {
+            "type": "object",
+            "properties": {
+                "agents": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/database.Agent"
+                    }
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "teamserver.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                }
+            }
+        },
+        "teamserver.TaskDelete": {
+            "type": "object",
+            "properties": {
+                "task_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "teamserver.TaskEntry": {
+            "type": "object",
+            "properties": {
+                "guid": {
+                    "type": "string"
+                },
+                "param_1": {
+                    "type": "string"
+                },
+                "param_2": {
+                    "type": "string"
+                },
+                "task_id": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "integer"
+                }
+            }
+        },
+        "teamserver.UserLogin": {
+            "type": "object",
+            "properties": {
+                "passwd": {
+                    "type": "string"
+                },
+                "user": {
+                    "type": "string"
+                }
+            }
+        }
+    },
+    "securityDefinitions": {
+        "BearerAuth": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
+        }
+    }
+}

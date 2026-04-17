@@ -1,5 +1,11 @@
 package teamserver
 
+import (
+	"net"
+	"net/http"
+	"sync"
+)
+
 type TaskDelete struct {
 	TaskID int `json:"task_id"`
 }
@@ -19,4 +25,15 @@ type UserLogin struct {
 
 type ErrorResponse struct {
 	Error string `json:"error"`
+}
+
+type Broker struct {
+	Channels map[string]chan string
+	mu       sync.RWMutex
+}
+
+type TeamServer struct {
+	Listener   net.Listener
+	httpServer *http.Server
+	SSE        *Broker
 }
