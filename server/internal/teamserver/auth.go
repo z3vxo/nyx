@@ -3,19 +3,41 @@ package teamserver
 import (
 	"fmt"
 	"net/http"
+	"os"
 	"strings"
+	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/z3vxo/kronos/internal/config"
 )
+
+func Send404(w http.ResponseWriter) {
+	w.Header().Set("Server", "kronos")
+	w.Header().Set("Content-Type", "text/html")
+
+	path := config.Cfg.Server.NotFoundFile
+	if strings.HasPrefix(path, "~/") {
+		home, _ := os.UserHomeDir()
+		path = home + path[1:]
+	}
+
+	content, err := os.ReadFile(path)
+	if err != nil {
+		fmt.Println(err)
+		http.Error(w, "<h1>404 not found</h1>", http.StatusNotFound)
+		return
+	}
+	w.WriteHeader(http.StatusNotFound)
+	w.Write(content)
+}
 
 func authMiddleWare(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		authToken := r.Header.Get("Authorization")
 
 		if authToken == "" {
+			//Send404(w)
 			SendJSONError(w, "missing token", http.StatusUnauthorized)
-
 			return
 		}
 
@@ -28,6 +50,7 @@ func authMiddleWare(next http.Handler) http.Handler {
 		})
 
 		if err != nil || !token.Valid {
+			//Send404(w)
 			SendJSONError(w, "invalid token", http.StatusUnauthorized)
 
 			return
@@ -44,7 +67,7 @@ func CheckLogin(user, pass string) bool {
 func CraftJWT(user string) (string, error) {
 	claims := jwt.MapClaims{
 		"user": user,
-		"exp":  config.Cfg.TS.Auth.TokenHours,
+		"exp":  time.Now().Add(time.Duration(config.Cfg.TS.Auth.TokenHours) * time.Hour).Unix(),
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)

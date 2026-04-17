@@ -15,7 +15,7 @@ func GetDbPath() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return fmt.Sprintf("%s/.nyx/database/nyx_db.sql", home), nil
+	return fmt.Sprintf("%s/.kronos/database/kronos_db.sql", home), nil
 }
 
 func InitDB() error {

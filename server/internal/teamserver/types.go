@@ -1,5 +1,9 @@
 package teamserver
 
+type TaskDelete struct {
+	TaskID int `json:"task_id"`
+}
+
 type TaskEntry struct {
 	Cmd_type int    `json:"type"`
 	Guid     string `json:"guid"`

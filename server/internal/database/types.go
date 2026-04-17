@@ -10,7 +10,7 @@ type Agent struct {
 	Pid        int    `json:"pid"`
 	ProcPath   string `json:"proc_path"`
 	WinVer     string `json:"winver"`
-	LastSeen   string `json:"last_checkin"`
+	LastSeen   int64  `json:"last_checkin"`
 }
 
 type Agents struct {

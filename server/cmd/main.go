@@ -4,7 +4,10 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"os/signal"
 	"path/filepath"
+	"syscall"
+	"time"
 
 	"github.com/z3vxo/kronos/internal/config"
 	"github.com/z3vxo/kronos/internal/database"
@@ -18,7 +21,7 @@ func SetupKronos() error {
 		return err
 	}
 
-	basePath := filepath.Join(home, ".nyx")
+	basePath := filepath.Join(home, ".kronos")
 	configDir := filepath.Join(basePath, "config")
 	dbDir := filepath.Join(basePath, "database")
 
@@ -30,7 +33,7 @@ func SetupKronos() error {
 	}
 
 	configFile := filepath.Join(configDir, "config.yaml")
-	dbFile := filepath.Join(dbDir, "nyx_db.sql")
+	dbFile := filepath.Join(dbDir, "kronos_db.sql")
 	logFile := filepath.Join(configDir, "nyx.log")
 
 	if err := ensureFile(logFile); err != nil {
@@ -46,8 +49,8 @@ func SetupKronos() error {
 				ListenInterface: "127.0.0.1",
 				Port:            50050,
 				Auth: config.AuthConf{
-					Username:          "nyx",
-					Password:          "nyxpwd",
+					Username:          "kronos",
+					Password:          "kronospwd",
 					JwtSecret:         "nyxtest123",
 					TokenHours:        24,
 					TokenRefreshHours: 168,
@@ -60,6 +63,7 @@ func SetupKronos() error {
 				PostEndpoint: "/ms/upload",
 				GetHeaders:   map[string]string{"Server": "apache"},
 				PostHeaders:  map[string]string{"Server": "nginx"},
+				NotFoundFile: "~/.kronos/404.html",
 			},
 		}
 
@@ -70,12 +74,9 @@ func SetupKronos() error {
 		if err := os.WriteFile(configFile, data, 0644); err != nil {
 			return err
 		}
-	} else {
-		if err := config.LoadConfig(); err != nil {
-			return err
-		}
 	}
-	return nil
+
+	return config.LoadConfig()
 }
 
 func ensureFile(path string) error {
@@ -99,8 +100,23 @@ func main() {
 	}
 
 	ts := teamserver.NewTeamServer()
-	if err := ts.Start(); err != nil && err != http.ErrServerClosed {
-		fmt.Println("Failed Setting up server")
-	}
-	return
+	go func() {
+		if err := ts.Start(); err != nil && err != http.ErrServerClosed {
+			fmt.Println("Failed setting up server:", err)
+		}
+	}()
+
+	ticker := time.NewTicker(10 * time.Second)
+	defer ticker.Stop()
+	go func() {
+		for range ticker.C {
+			ts.SSE.Broadcast("test")
+		}
+	}()
+
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+	fmt.Println("Shutting down...")
+	ts.Stop()
 }

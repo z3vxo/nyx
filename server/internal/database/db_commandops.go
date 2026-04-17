@@ -17,3 +17,13 @@ func InsertCommand(cmdType int, guid, taskid, param1, param2 string) error {
 	return nil
 
 }
+
+func Db_DeleteTask(id int) error {
+	query := `DELETE FROM commands WHERE task_id = ?`
+
+	_, err := db.Exec(query, id)
+	if err != nil {
+		return err
+	}
+	return nil
+}

@@ -28,6 +28,7 @@ type HttpServer struct {
 	PostEndpoint string            `yaml:"postEndpoint"`
 	GetHeaders   map[string]string `yaml:"GetResponseHeaders"`
 	PostHeaders  map[string]string `yaml:"PostResponseHeaders"`
+	NotFoundFile string            `yaml:"404Path"`
 }
 
 type Config struct {
@@ -43,7 +44,7 @@ func LoadConfig() error {
 	if err != nil {
 		return err
 	}
-	path := filepath.Join(home, ".nyx", "config", "config.yaml")
+	path := filepath.Join(home, ".kronos", "config", "config.yaml")
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return err
