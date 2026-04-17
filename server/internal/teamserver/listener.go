@@ -26,6 +26,44 @@ type Listeners struct {
 	PostEndpoint string
 }
 
+func BuildListenerHttp(port int) *http.Server {
+	r := chi.NewRouter()
+	r.Get(config.Cfg.Server.GetEndpoint, server.AgentCheckInHandler)
+	r.Post(config.Cfg.Server.PostEndpoint, server.AgentUploadHandler)
+
+	return &http.Server{
+		Addr:         fmt.Sprintf(":%d", port),
+		Handler:      r,
+		ReadTimeout:  15 * time.Second,
+		WriteTimeout: 30 * time.Second,
+		IdleTimeout:  60 * time.Second,
+	}
+}
+
+func (ts *TeamServer) StartListenersFromDB() error {
+	ToStart, err := ts.db.GetListeners()
+	if err != nil {
+		return err
+	}
+	for _, l := range ToStart {
+		ts.Listeners.Mu.Lock()
+		ts.Listeners.ListenerMap[l.Guid] = Listener{
+			httpServer: BuildListenerHttp(l.Port),
+			Port:       l.Port,
+		}
+		ts.Listeners.Mu.Unlock()
+
+		if err := ts.StartListener(l.Guid); err != nil {
+			ts.Listeners.Mu.Lock()
+			delete(ts.Listeners.ListenerMap, l.Guid)
+			ts.Listeners.Mu.Unlock()
+			fmt.Printf("failed starting listener %s: %v\n", l.Guid, err)
+			continue
+		}
+	}
+	return nil
+}
+
 func (ts *TeamServer) NewListener(port int) (string, error) {
 	id := uuid.NewString()
 
@@ -37,19 +75,9 @@ func (ts *TeamServer) NewListener(port int) (string, error) {
 		}
 	}
 
-	r := chi.NewRouter()
-	r.Get(config.Cfg.Server.GetEndpoint, server.AgentCheckInHandler)
-	r.Post(config.Cfg.Server.PostEndpoint, server.AgentUploadHandler)
-
 	ts.Listeners.ListenerMap[id] = Listener{
-		httpServer: &http.Server{
-			Addr:         fmt.Sprintf(":%d", port),
-			Handler:      r,
-			ReadTimeout:  15 * time.Second,
-			WriteTimeout: 30 * time.Second,
-			IdleTimeout:  60 * time.Second,
-		},
-		Port: port,
+		httpServer: BuildListenerHttp(port),
+		Port:       port,
 	}
 	ts.Listeners.Mu.Unlock()
 

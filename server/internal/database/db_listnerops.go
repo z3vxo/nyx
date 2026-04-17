@@ -19,3 +19,31 @@ func (db *DB) DeleteListener(id string) error {
 	}
 	return nil
 }
+
+type ListenersToStart struct {
+	Guid string
+	Port int
+}
+
+func (db *DB) GetListeners() ([]ListenersToStart, error) {
+	q := `SELECT guid, port FROM listeners WHERE status='running'`
+
+	rows, err := db.conn.Query(q)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var Entrys []ListenersToStart
+	for rows.Next() {
+		var l ListenersToStart
+		err := rows.Scan(&l.Guid, &l.Port)
+		if err != nil {
+			return nil, err
+		}
+
+		Entrys = append(Entrys, l)
+	}
+
+	return Entrys, nil
+}

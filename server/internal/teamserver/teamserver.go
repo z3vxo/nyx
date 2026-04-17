@@ -65,6 +65,9 @@ func (ts *TeamServer) Start() error {
 		})
 	})
 	fmt.Println("Server Started!")
+	if err := ts.StartListenersFromDB(); err != nil {
+		return err
+	}
 
 	return ts.httpServer.ListenAndServe()
 }

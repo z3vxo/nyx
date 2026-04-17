@@ -25,6 +25,15 @@ case "$1" in
     delete_cmd)
         curl -s http://localhost:50050/ts/rest/commands/delete  -d '{"task_id":""}' -s -H "Authorization: Bearer $token" | jq
         ;;
+    list_cmd)
+        curl -s "http://localhost:50050/ts/rest/tasks/list/$2" -s -H "Authorization: Bearer $token" | jq
+        ;;
+    list_start)
+        curl -s "http://localhost:50050/ts/rest/listeners/start" -X POST -d '{"port":8080}' -H "Authorization: Bearer $token" | jq
+        ;;
+    list_stop)
+        curl -s "http://localhost:50050/ts/rest/listeners/stop/$2" -X POST -H "Authorization: Bearer $token" | jq
+        ;;
     sse)
         curl -N http://localhost:50050/ts/events -H "Authorization: Bearer $token"
         ;;
