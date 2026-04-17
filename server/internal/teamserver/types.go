@@ -4,6 +4,9 @@ import (
 	"net"
 	"net/http"
 	"sync"
+
+	"github.com/z3vxo/kronos/internal/auth"
+	"github.com/z3vxo/kronos/internal/database"
 )
 
 type TaskDelete struct {
@@ -23,10 +26,6 @@ type UserLogin struct {
 	Password string `json:"passwd"`
 }
 
-type ErrorResponse struct {
-	Error string `json:"error"`
-}
-
 type Broker struct {
 	Channels map[string]chan string
 	mu       sync.RWMutex
@@ -36,4 +35,6 @@ type TeamServer struct {
 	Listener   net.Listener
 	httpServer *http.Server
 	SSE        *Broker
+	Auth       *auth.Auth
+	db         *database.DB
 }

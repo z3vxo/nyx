@@ -7,10 +7,19 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/z3vxo/kronos/internal/auth"
 	"github.com/z3vxo/kronos/internal/config"
+	"github.com/z3vxo/kronos/internal/database"
 )
 
-func NewTeamServer() *TeamServer {
+func NewTeamServer() (*TeamServer, error) {
+	a := auth.NewAuth(config.Cfg.TS.Auth.Username, config.Cfg.TS.Auth.Password,
+		config.Cfg.TS.Auth.JwtSecret, config.Cfg.TS.Auth.TokenHours)
+	d, err := database.NewDB()
+	if err != nil {
+		return nil, err
+	}
+
 	return &TeamServer{
 		httpServer: &http.Server{
 			Addr:         fmt.Sprintf("%s:%d", config.Cfg.TS.ListenInterface, config.Cfg.TS.Port),
@@ -18,8 +27,10 @@ func NewTeamServer() *TeamServer {
 			WriteTimeout: 0,
 			IdleTimeout:  60 * time.Second,
 		},
-		SSE: NewBroker(),
-	}
+		SSE:  NewBroker(),
+		Auth: a,
+		db:   d,
+	}, nil
 }
 
 func NewBroker() *Broker {
@@ -32,22 +43,18 @@ func (ts *TeamServer) Start() error {
 
 	r := chi.NewRouter()
 	ts.httpServer.Handler = r
-	r.Group(func(r chi.Router) {
-		r.Use(authMiddleWare)
-		r.Get("/ts/events", ts.SSE.EventHandler)
-
-	})
 
 	r.Route("/ts", func(r chi.Router) {
-		r.Post("/rest/login", loginHandler)
+		r.Post("/rest/login", ts.loginHandler)
+		r.Get("/events", ts.SSE.EventHandler)
 
 		r.Group(func(r chi.Router) {
-			r.Use(authMiddleWare)
-			r.Get("/rest/agents/list", ts_AgentListHandler)
-			r.Get("/rest/agents/resolve/{codename}", ts_AgentResolveHandler)
+			r.Use(ts.Auth.AuthMiddleWare)
+			r.Get("/rest/agents/list", ts.AgentListHandler)
+			r.Get("/rest/agents/resolve/{codename}", ts.AgentResolveHandler)
 
-			r.Post("/rest/commands/new", ts_CommandNewHandler)
-			r.Post("/rest/commands/delete", ts_CommandDeleteHandler)
+			r.Post("/rest/commands/new", ts.CommandNewHandler)
+			r.Post("/rest/commands/delete", ts.CommandDeleteHandler)
 
 			//r.Get("/rest/listeners/list", ts_ListListener)
 			//r.Post("/rest/listeners/start, ts_StartListenerHandler)

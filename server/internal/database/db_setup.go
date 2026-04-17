@@ -8,7 +8,9 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-var db *sql.DB
+type DB struct {
+	conn *sql.DB
+}
 
 func GetDbPath() (string, error) {
 	home, err := os.UserHomeDir()
@@ -18,22 +20,26 @@ func GetDbPath() (string, error) {
 	return fmt.Sprintf("%s/.kronos/database/kronos_db.sql", home), nil
 }
 
-func InitDB() error {
-	var err error
+func NewDB() (*DB, error) {
 	dbPath, err := GetDbPath()
 	if err != nil {
-		fmt.Println("path")
-		return err
+		return nil, err
 	}
-	fmt.Println(dbPath)
-
-	DB, err := sql.Open("sqlite3", dbPath)
-
-	if err := DB.Ping(); err != nil {
-		fmt.Println("ping")
-
-		return err
+	db, err := sql.Open("sqlite3", dbPath)
+	if err != nil {
+		return nil, err
 	}
+
+	d := &DB{conn: db}
+	err = InitDB(d)
+	if err != nil {
+		return nil, err
+	}
+
+	return d, nil
+}
+
+func InitDB(db *DB) error {
 
 	pragmans := []string{
 		"PRAGMA journal_mode=WAL",
@@ -42,17 +48,16 @@ func InitDB() error {
 	}
 
 	for _, p := range pragmans {
-		if _, err := DB.Exec(p); err != nil {
+		if _, err := db.conn.Exec(p); err != nil {
 			fmt.Println("pragmas")
 			return err
 		}
 	}
-	db = DB
 
-	return SetupDB()
+	return SetupDB(db)
 }
 
-func SetupDB() error {
+func SetupDB(db *DB) error {
 
 	agents_querys := `CREATE TABLE IF NOT EXISTS agents (
 		guid 			TEXT NOT NULL,
@@ -68,7 +73,7 @@ func SetupDB() error {
 		session_key    	BLOB NOT NULL,
 		last_checkin    INTEGER NOT NULL);`
 
-	_, err := db.Exec(agents_querys)
+	_, err := db.conn.Exec(agents_querys)
 	if err != nil {
 		fmt.Println(err)
 		fmt.Println("agents")
@@ -84,7 +89,7 @@ func SetupDB() error {
 		executed     BOOLEAN NOT NULL,
 		tasked_at    INTEGER NOT NULL);`
 
-	_, err = db.Exec(commands_query)
+	_, err = db.conn.Exec(commands_query)
 	if err != nil {
 		fmt.Println(err)
 		fmt.Println("commands")

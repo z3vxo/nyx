@@ -2,15 +2,14 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"path/filepath"
 	"syscall"
-	"time"
 
 	"github.com/z3vxo/kronos/internal/config"
-	"github.com/z3vxo/kronos/internal/database"
 	"github.com/z3vxo/kronos/internal/teamserver"
 	"gopkg.in/yaml.v3"
 )
@@ -93,30 +92,23 @@ func ensureFile(path string) error {
 func main() {
 	fmt.Println("starting!")
 	if err := SetupKronos(); err != nil {
-		fmt.Println("failed")
-	}
-	if err := database.InitDB(); err != nil {
-		fmt.Println("Failed Setting up DB")
+		log.Fatalf("Failed bootstrap: %v", err)
 	}
 
-	ts := teamserver.NewTeamServer()
-	go func() {
-		if err := ts.Start(); err != nil && err != http.ErrServerClosed {
-			fmt.Println("Failed setting up server:", err)
-		}
-	}()
-
-	ticker := time.NewTicker(10 * time.Second)
-	defer ticker.Stop()
-	go func() {
-		for range ticker.C {
-			ts.SSE.Broadcast("test")
-		}
-	}()
-
+	ts, err := teamserver.NewTeamServer()
+	if err != nil {
+		log.Fatalf("Failed Setting up TS: %v", err)
+	}
 	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	<-quit
-	fmt.Println("Shutting down...")
-	ts.Stop()
+	go func() {
+		signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+		<-quit
+		fmt.Println("Shutting down...")
+		ts.Stop()
+	}()
+
+	if err := ts.Start(); err != nil && err != http.ErrServerClosed {
+		log.Fatalf("Failed Starting teamserver: %v", err)
+	}
+
 }

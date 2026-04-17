@@ -4,21 +4,11 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 
-	"github.com/z3vxo/kronos/internal/config"
-
 	"github.com/go-chi/chi/v5"
-	"github.com/z3vxo/kronos/internal/database"
+	"github.com/z3vxo/kronos/internal/httputil"
 )
-
-func SendJSONError(w http.ResponseWriter, message string, code int) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(code)
-	resp := ErrorResponse{Error: message}
-	json.NewEncoder(w).Encode(resp)
-}
 
 // @Summary      List all agents
 // @Tags         agents
@@ -27,11 +17,11 @@ func SendJSONError(w http.ResponseWriter, message string, code int) {
 // @Failure      500  {object}  ErrorResponse
 // @Security     BearerAuth
 // @Router       /ts/rest/agents/list [get]
-func ts_AgentListHandler(w http.ResponseWriter, r *http.Request) {
+func (ts *TeamServer) AgentListHandler(w http.ResponseWriter, r *http.Request) {
 
-	data, err := database.Db_ListAgents()
+	data, err := ts.db.ListAgents()
 	if err != nil {
-		SendJSONError(w, "Failed retreiving agents", http.StatusInternalServerError)
+		httputil.SendJSONError(w, "Failed retreiving agents", http.StatusInternalServerError)
 		return
 	}
 
@@ -51,20 +41,20 @@ func ts_AgentListHandler(w http.ResponseWriter, r *http.Request) {
 // @Failure      500       {object}  ErrorResponse
 // @Security     BearerAuth
 // @Router       /ts/rest/agents/resolve/{codename} [get]
-func ts_AgentResolveHandler(w http.ResponseWriter, r *http.Request) {
+func (ts *TeamServer) AgentResolveHandler(w http.ResponseWriter, r *http.Request) {
 	codeName := chi.URLParam(r, "codename")
 	if codeName == "" {
-		SendJSONError(w, "missing codename", http.StatusBadRequest)
+		httputil.SendJSONError(w, "missing codename", http.StatusBadRequest)
 		return
 	}
 
-	AgentGuid, err := database.ResolveCodename(codeName)
+	AgentGuid, err := ts.db.ResolveCodename(codeName)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			SendJSONError(w, "Agent Codename not found", http.StatusNotFound)
+			httputil.SendJSONError(w, "Agent Codename not found", http.StatusNotFound)
 			return
 		}
-		SendJSONError(w, "database error", http.StatusInternalServerError)
+		httputil.SendJSONError(w, "database error", http.StatusInternalServerError)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
@@ -81,16 +71,16 @@ func ts_AgentResolveHandler(w http.ResponseWriter, r *http.Request) {
 // @Failure      500   {object}  ErrorResponse
 // @Security     BearerAuth
 // @Router       /ts/rest/commands/new [post]
-func ts_CommandNewHandler(w http.ResponseWriter, r *http.Request) {
+func (ts *TeamServer) CommandNewHandler(w http.ResponseWriter, r *http.Request) {
 	var cmd TaskEntry
 	if err := json.NewDecoder(r.Body).Decode(&cmd); err != nil {
-		SendJSONError(w, "Error decoding json", http.StatusInternalServerError)
+		httputil.SendJSONError(w, "Error decoding json", http.StatusInternalServerError)
 		return
 	}
 
-	err := database.InsertCommand(cmd.Cmd_type, cmd.Guid, cmd.TaskID, cmd.Param1, cmd.Param2)
+	err := ts.db.InsertCommand(cmd.Cmd_type, cmd.Guid, cmd.TaskID, cmd.Param1, cmd.Param2)
 	if err != nil {
-		SendJSONError(w, "failed inserting command", http.StatusInternalServerError)
+		httputil.SendJSONError(w, "failed inserting command", http.StatusInternalServerError)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
@@ -107,16 +97,16 @@ func ts_CommandNewHandler(w http.ResponseWriter, r *http.Request) {
 // @Failure      500   {object}  ErrorResponse
 // @Security     BearerAuth
 // @Router       /ts/rest/commands/delete [post]
-func ts_CommandDeleteHandler(w http.ResponseWriter, r *http.Request) {
+func (ts *TeamServer) CommandDeleteHandler(w http.ResponseWriter, r *http.Request) {
 	var task TaskDelete
 
 	if err := json.NewDecoder(r.Body).Decode(&task); err != nil {
-		SendJSONError(w, "Error Decoding json", http.StatusInternalServerError)
+		httputil.SendJSONError(w, "Error Decoding json", http.StatusInternalServerError)
 		return
 	}
 
-	if err := database.Db_DeleteTask(task.TaskID); err != nil {
-		SendJSONError(w, "Failed Deleting task", http.StatusInternalServerError)
+	if err := ts.db.DeleteTask(task.TaskID); err != nil {
+		httputil.SendJSONError(w, "Failed Deleting task", http.StatusInternalServerError)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
@@ -134,25 +124,24 @@ func ts_CommandDeleteHandler(w http.ResponseWriter, r *http.Request) {
 // @Failure      401   {object}  ErrorResponse
 // @Failure      500   {object}  ErrorResponse
 // @Router       /ts/rest/login [post]
-func loginHandler(w http.ResponseWriter, r *http.Request) {
+func (ts *TeamServer) loginHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 
 	var log UserLogin
 	if err := json.NewDecoder(r.Body).Decode(&log); err != nil {
-		SendJSONError(w, "failed decoding json", http.StatusInternalServerError)
+		httputil.SendJSONError(w, "failed decoding json", http.StatusInternalServerError)
 		return
 	}
 
-	fmt.Printf("got: [%q] [%q] | want: [%q] [%q]\n", log.Username, log.Password, config.Cfg.TS.Auth.Username, config.Cfg.TS.Auth.Password)
-	if !CheckLogin(log.Username, log.Password) {
-		SendJSONError(w, "invalid login", http.StatusUnauthorized)
+	if !ts.Auth.CheckLogin(log.Username, log.Password) {
+		httputil.SendJSONError(w, "invalid login", http.StatusUnauthorized)
 		return
 	}
 
-	token, err := CraftJWT(log.Username)
+	token, err := ts.Auth.CraftJWT(log.Username)
 	if err != nil {
-		SendJSONError(w, "Failed Crafting jwt", http.StatusInternalServerError)
+		httputil.SendJSONError(w, "Failed Crafting jwt", http.StatusInternalServerError)
 
 		return
 	}

@@ -5,11 +5,11 @@ import (
 	"time"
 )
 
-func InsertCommand(cmdType int, guid, taskid, param1, param2 string) error {
+func (db *DB) InsertCommand(cmdType int, guid, taskid, param1, param2 string) error {
 
 	query := `INSERT INTO commands(guid, command_type, task_id, param_1, param_2,executed, tasked_at) VALUES(?, ?, ?, ?, ?, ?, ?)`
 
-	_, err := db.Exec(query, guid, taskid, cmdType, param1, param2, 0, time.Now().Unix())
+	_, err := db.conn.Exec(query, guid, cmdType, taskid, param1, param2, 0, time.Now().Unix())
 	if err != nil {
 		fmt.Println(err)
 		return err
@@ -18,10 +18,10 @@ func InsertCommand(cmdType int, guid, taskid, param1, param2 string) error {
 
 }
 
-func Db_DeleteTask(id int) error {
+func (db *DB) DeleteTask(id int) error {
 	query := `DELETE FROM commands WHERE task_id = ?`
 
-	_, err := db.Exec(query, id)
+	_, err := db.conn.Exec(query, id)
 	if err != nil {
 		return err
 	}
