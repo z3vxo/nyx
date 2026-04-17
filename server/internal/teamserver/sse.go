@@ -8,7 +8,7 @@ import (
 )
 
 func (b *Broker) AddSubscriber() (string, chan string) {
-	id := fmt.Sprintf("%0x16x", rand.Uint64())
+	id := fmt.Sprintf("%016x", rand.Uint64())
 	ch := make(chan string, 8)
 	b.mu.Lock()
 	b.Channels[id] = ch
@@ -35,8 +35,8 @@ func (b *Broker) Broadcast(msg string) {
 	for _, ch := range b.Channels {
 		select {
 		case ch <- msg:
+		default:
 		}
-
 	}
 }
 

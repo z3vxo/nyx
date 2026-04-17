@@ -44,7 +44,7 @@ func InitDB(db *DB) error {
 	pragmans := []string{
 		"PRAGMA journal_mode=WAL",
 		"PRAGMA synchronous=NORMAL",
-		"PRAGMA foreign_key=ON",
+		"PRAGMA foreign_keys=ON",
 	}
 
 	for _, p := range pragmans {
@@ -83,7 +83,7 @@ func SetupDB(db *DB) error {
 	commands_query := `CREATE TABLE IF NOT EXISTS commands (
 		guid TEXT NOT NULL,
 		command_type INTEGER NOT NULL,
-		task_id      TEXT NOT NULL,
+		task_id      INTEGER NOT NULL,
 		param_1      TEXT NOT NULL,
 		param_2      TEXT NOT NULL,
 		executed     BOOLEAN NOT NULL,

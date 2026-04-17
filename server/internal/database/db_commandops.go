@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-func (db *DB) InsertCommand(cmdType int, guid, taskid, param1, param2 string) error {
+func (db *DB) InsertCommand(cmdType, taskid int, guid, param1, param2 string) error {
 
 	query := `INSERT INTO commands(guid, command_type, task_id, param_1, param_2,executed, tasked_at) VALUES(?, ?, ?, ?, ?, ?, ?)`
 

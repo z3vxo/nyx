@@ -72,5 +72,6 @@ func (ts *TeamServer) Start() error {
 func (ts *TeamServer) Stop() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
+	ts.StopAllListeners()
 	ts.httpServer.Shutdown(ctx)
 }

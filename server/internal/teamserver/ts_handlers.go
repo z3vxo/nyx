@@ -55,7 +55,7 @@ func (ts *TeamServer) CommandNewHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	err := ts.db.InsertCommand(cmd.Cmd_type, cmd.Guid, cmd.TaskID, cmd.Param1, cmd.Param2)
+	err := ts.db.InsertCommand(cmd.Cmd_type, cmd.TaskID, cmd.Guid, cmd.Param1, cmd.Param2)
 	if err != nil {
 		httputil.SendJSONError(w, "failed inserting command", http.StatusInternalServerError)
 		return

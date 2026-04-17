@@ -15,7 +15,7 @@ type TaskDelete struct {
 type TaskEntry struct {
 	Cmd_type int    `json:"type"`
 	Guid     string `json:"guid"`
-	TaskID   string `json:"task_id"`
+	TaskID   int    `json:"task_id"`
 	Param1   string `json:"param_1"`
 	Param2   string `json:"param_2"`
 }
