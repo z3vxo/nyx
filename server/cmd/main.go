@@ -1,17 +1,18 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
+	"net/http"
 	"os"
 	"path/filepath"
 
 	"github.com/z3vxo/kronos/internal/config"
 	"github.com/z3vxo/kronos/internal/database"
-	"github.com/z3vxo/kronos/internal/server"
+	"github.com/z3vxo/kronos/internal/teamserver"
+	"gopkg.in/yaml.v3"
 )
 
-func SetupNyx() error {
+func SetupKronos() error {
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return err
@@ -28,7 +29,7 @@ func SetupNyx() error {
 		return err
 	}
 
-	configFile := filepath.Join(configDir, "config.json")
+	configFile := filepath.Join(configDir, "config.yaml")
 	dbFile := filepath.Join(dbDir, "nyx_db.sql")
 	logFile := filepath.Join(configDir, "nyx.log")
 
@@ -41,26 +42,28 @@ func SetupNyx() error {
 
 	if _, err := os.Stat(configFile); os.IsNotExist(err) {
 		defaultCfg := config.Config{
-			User:         "nyx",
-			Passwd:       "nyxpwd",
-			JwtSecret:    "nyxtest123",
-			GetEndpoint:  "/ms/download",
-			PostEndpoint: "/ms/Upload",
-			GetHeaders: []config.Headers{
-				{
-					Name:  "Server",
-					Value: "apache 2.4",
+			TS: config.TeamServer{
+				ListenInterface: "127.0.0.1",
+				Port:            50050,
+				Auth: config.AuthConf{
+					Username:          "nyx",
+					Password:          "nyxpwd",
+					JwtSecret:         "nyxtest123",
+					TokenHours:        24,
+					TokenRefreshHours: 168,
 				},
+				Cert: "~/.nyx/certs/cert.crt",
+				Key:  "~/.nyx/certs/server.key",
 			},
-			PostHeaders: []config.Headers{
-				{
-					Name:  "Server",
-					Value: "apache 2.4",
-				},
+			Server: config.HttpServer{
+				GetEndpoint:  "/ms/download",
+				PostEndpoint: "/ms/upload",
+				GetHeaders:   map[string]string{"Server": "apache"},
+				PostHeaders:  map[string]string{"Server": "nginx"},
 			},
 		}
 
-		data, err := json.MarshalIndent(defaultCfg, "", "  ")
+		data, err := yaml.Marshal(defaultCfg)
 		if err != nil {
 			return err
 		}
@@ -68,8 +71,7 @@ func SetupNyx() error {
 			return err
 		}
 	} else {
-		err := config.LoadConfig()
-		if err != nil {
+		if err := config.LoadConfig(); err != nil {
 			return err
 		}
 	}
@@ -89,16 +91,16 @@ func ensureFile(path string) error {
 
 func main() {
 	fmt.Println("starting!")
-	if err := SetupNyx(); err != nil {
+	if err := SetupKronos(); err != nil {
 		fmt.Println("failed")
 	}
 	if err := database.InitDB(); err != nil {
 		fmt.Println("Failed Setting up DB")
 	}
 
-	if err := server.SetupTeamServer(); err != nil {
+	ts := teamserver.NewTeamServer()
+	if err := ts.Start(); err != nil && err != http.ErrServerClosed {
 		fmt.Println("Failed Setting up server")
-
 	}
 	return
 }

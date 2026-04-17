@@ -1,10 +1,9 @@
-package server
+package teamserver
 
 import (
 	"fmt"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/z3vxo/kronos/internal/config"
@@ -25,7 +24,7 @@ func authMiddleWare(next http.Handler) http.Handler {
 			if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, fmt.Errorf("incorrect siging method")
 			}
-			return []byte(config.Cfg.JwtSecret), nil
+			return []byte(config.Cfg.TS.Auth.JwtSecret), nil
 		})
 
 		if err != nil || !token.Valid {
@@ -38,19 +37,19 @@ func authMiddleWare(next http.Handler) http.Handler {
 }
 
 func CheckLogin(user, pass string) bool {
-	return user == config.Cfg.User && pass == config.Cfg.Passwd
+	return user == config.Cfg.TS.Auth.Username && pass == config.Cfg.TS.Auth.Password
 
 }
 
 func CraftJWT(user string) (string, error) {
 	claims := jwt.MapClaims{
 		"user": user,
-		"exp":  time.Now().Add(30 * 24 * time.Hour).Unix(),
+		"exp":  config.Cfg.TS.Auth.TokenHours,
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
-	tokenString, err := token.SignedString([]byte(config.Cfg.JwtSecret))
+	tokenString, err := token.SignedString([]byte(config.Cfg.TS.Auth.JwtSecret))
 	if err != nil {
 		fmt.Println(err)
 		return "", err

@@ -1,0 +1,19 @@
+teamserver:
+  interface: "127.0.0.1"
+  port: 50050
+  auth:
+    user: "kronos"
+    pass: "kronospwd"
+    jwtSecret: "aGVsbG9hc2Rhc2Rhc2QK"
+    token_hours: 24
+    token_refresh_hours: 168
+  cert: "~/.kronos/certs/cert.crt"
+  key: "~/.kronos/certs/server.key"
+
+server:
+  getEndpoint: "/ms/download"
+  postEndpoint: "/ms/upload"
+  GetResponseHeaders:
+    Server: "apache"
+  PostResponseHeaders:
+    Server: "nginx"

@@ -2,12 +2,31 @@ package server
 
 import (
 	"fmt"
+	"net"
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/z3vxo/kronos/internal/config"
 )
 
-func SetupTeamServer() error {
+type TeamServer struct {
+	Listener   net.Listener
+	httpServer *http.Server
+}
+
+func NewTeamServer() *TeamServer {
+	return &TeamServer{
+		httpServer: &http.Server{
+			Addr:         fmt.Sprintf("%s:%d", config.Cfg.TS.ListenInterface, config.Cfg.TS.Port),
+			ReadTimeout:  15 * time.Second,
+			WriteTimeout: 0,
+			IdleTimeout:  60 * time.Second,
+		},
+	}
+}
+
+func (ts *TeamServer) Start() error {
 
 	r := chi.NewRouter()
 
@@ -29,7 +48,5 @@ func SetupTeamServer() error {
 	})
 	fmt.Println("Server Started!")
 
-	http.ListenAndServe(":3000", r)
-
-	return nil
+	return ts.httpServer.ListenAndServe()
 }

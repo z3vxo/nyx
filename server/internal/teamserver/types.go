@@ -1,4 +1,4 @@
-package server
+package teamserver
 
 type TaskEntry struct {
 	Cmd_type int    `json:"type"`

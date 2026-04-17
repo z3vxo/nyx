@@ -1,4 +1,4 @@
-package server
+package teamserver
 
 import (
 	"database/sql"
@@ -17,7 +17,7 @@ func SendJSONError(w http.ResponseWriter, message string, code int) {
 	json.NewEncoder(w).Encode(resp)
 }
 
-func nyx_AgentListHandler(w http.ResponseWriter, r *http.Request) {
+func ts_AgentListHandler(w http.ResponseWriter, r *http.Request) {
 
 	data, err := database.Db_ListAgents()
 	if err != nil {
@@ -31,7 +31,7 @@ func nyx_AgentListHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func nyx_AgentResolveHandler(w http.ResponseWriter, r *http.Request) {
+func ts_AgentResolveHandler(w http.ResponseWriter, r *http.Request) {
 	codeName := chi.URLParam(r, "codename")
 	if codeName == "" {
 		SendJSONError(w, "missing codename", http.StatusBadRequest)
@@ -51,7 +51,7 @@ func nyx_AgentResolveHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{"guid": AgentGuid})
 }
 
-func nyx_CommandNewHandler(w http.ResponseWriter, r *http.Request) {
+func ts_CommandNewHandler(w http.ResponseWriter, r *http.Request) {
 	var cmd TaskEntry
 	if err := json.NewDecoder(r.Body).Decode(&cmd); err != nil {
 		SendJSONError(w, "Error decoding json", http.StatusInternalServerError)
@@ -65,7 +65,6 @@ func nyx_CommandNewHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	json.NewEncoder(w).Encode(map[string]string{"status": "OK"})
-	return
 }
 
 func loginHandler(w http.ResponseWriter, r *http.Request) {
