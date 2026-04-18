@@ -1,0 +1,4 @@
+http:
+  user: kronos
+  pass: kronospwd
+  host: http://127.0.0.1:50050

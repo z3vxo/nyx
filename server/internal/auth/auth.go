@@ -13,18 +13,20 @@ import (
 )
 
 type Auth struct {
-	User       string
-	Paswd      string
-	JwtSecret  []byte
-	TokenHours int
+	User              string
+	Paswd             string
+	JwtSecret         []byte
+	TokenHours        int
+	TokenRefreshHours int
 }
 
-func NewAuth(user, passwd, secret string, Hours int) *Auth {
+func NewAuth(user, passwd, secret string, Hours, RefreshHours int) *Auth {
 	return &Auth{
-		User:       user,
-		Paswd:      passwd,
-		JwtSecret:  []byte(secret),
-		TokenHours: Hours,
+		User:              user,
+		Paswd:             passwd,
+		JwtSecret:         []byte(secret),
+		TokenHours:        Hours,
+		TokenRefreshHours: RefreshHours,
 	}
 }
 
@@ -64,8 +66,20 @@ func (a *Auth) AuthMiddleWare(next http.Handler) http.Handler {
 }
 
 func (a *Auth) CheckLogin(user, pass string) bool {
+	fmt.Printf("[USER] Wanted %s | got %s\n", config.Cfg.TS.Auth.Username, user)
+	fmt.Printf("[PASSWD] Wanted %s | got %s\n", config.Cfg.TS.Auth.Password, pass)
 	return user == config.Cfg.TS.Auth.Username && pass == config.Cfg.TS.Auth.Password
 
+}
+
+func (a *Auth) CraftRefreshJWT(user string) (string, error) {
+	claims := jwt.MapClaims{
+		"user":    user,
+		"refresh": true,
+		"exp":     time.Now().Add(time.Duration(a.TokenRefreshHours) * time.Hour).Unix(),
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString(a.JwtSecret)
 }
 
 func (a *Auth) CraftJWT(user string) (string, error) {

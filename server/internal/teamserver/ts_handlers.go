@@ -164,9 +164,14 @@ func (ts *TeamServer) loginHandler(w http.ResponseWriter, r *http.Request) {
 	token, err := ts.Auth.CraftJWT(log.Username)
 	if err != nil {
 		httputil.SendJSONError(w, "Failed Crafting jwt", http.StatusInternalServerError)
-
 		return
 	}
 
-	json.NewEncoder(w).Encode(map[string]string{"token": token})
+	refresh, err := ts.Auth.CraftRefreshJWT(log.Username)
+	if err != nil {
+		httputil.SendJSONError(w, "Failed Crafting refresh jwt", http.StatusInternalServerError)
+		return
+	}
+
+	json.NewEncoder(w).Encode(map[string]string{"token": token, "refresh": refresh})
 }

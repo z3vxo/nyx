@@ -21,8 +21,8 @@ type TaskEntry struct {
 }
 
 type UserLogin struct {
-	Username string `json:"user"`
-	Password string `json:"passwd"`
+	Username string `json:"username"`
+	Password string `json:"password"`
 }
 
 type Broker struct {

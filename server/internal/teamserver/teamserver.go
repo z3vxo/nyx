@@ -14,7 +14,7 @@ import (
 
 func NewTeamServer() (*TeamServer, error) {
 	a := auth.NewAuth(config.Cfg.TS.Auth.Username, config.Cfg.TS.Auth.Password,
-		config.Cfg.TS.Auth.JwtSecret, config.Cfg.TS.Auth.TokenHours)
+		config.Cfg.TS.Auth.JwtSecret, config.Cfg.TS.Auth.TokenHours, config.Cfg.TS.Auth.TokenRefreshHours)
 	d, err := database.NewDB()
 	if err != nil {
 		return nil, err
