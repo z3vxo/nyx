@@ -111,7 +111,7 @@ func (ts *TeamServer) StartListenerHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	id, err := ts.NewListener(Info.Port)
+	id, name, err := ts.NewListener(Info.Port, Info.Protocol)
 	if err != nil {
 		fmt.Println(err)
 		httputil.SendJSONError(w, "failed Creating listener", http.StatusInternalServerError)
@@ -125,7 +125,7 @@ func (ts *TeamServer) StartListenerHandler(w http.ResponseWriter, r *http.Reques
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]string{"listener_id": id})
+	json.NewEncoder(w).Encode(map[string]string{"listener_name": name})
 }
 
 func (ts *TeamServer) StopListenerHandler(w http.ResponseWriter, r *http.Request) {

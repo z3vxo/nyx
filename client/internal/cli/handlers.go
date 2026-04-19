@@ -2,9 +2,12 @@ package cli
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"text/tabwriter"
 	"time"
+
+	"github.com/spf13/pflag"
 )
 
 func (c *CLI) ListAgents(args []string) {
@@ -71,7 +74,24 @@ func (c *CLI) ResolveAgent(args []string) {
 	return
 }
 
-func (c *CLI) ListListners(args []string) {
+func (c *CLI) ParseListenerCmd(args []string) {
+	if len(args) == 0 {
+		c.ListListners()
+		return
+	}
+
+	switch args[0] {
+	case "stop":
+		c.ui.Send("[+] Stopping Listener...")
+	case "start":
+		c.StartListener(args[1:])
+		//c.StopListener()
+	default:
+		c.ui.Send(fmt.Sprintf("[!] Unknown subcommand: %s", args[0]))
+	}
+}
+
+func (c *CLI) ListListners() {
 	var r ListListenersResp
 
 	if err := c.http.DoGet("ts/rest/listeners/list", &r); err != nil {
@@ -92,8 +112,39 @@ func (c *CLI) ListListners(args []string) {
 
 	for _, i := range r.Listeners {
 		fmt.Fprintf(w, "%s\t%d\t%s\t%s\n",
-			i.Name, i.Port, "HTTPS", "RUNNING")
+			i.Name, i.Port, i.Protocol, "RUNNING")
 	}
 	w.Flush()
 	c.ui.Send(buf.String())
+}
+
+func (c *CLI) StartListener(args []string) {
+	fs := pflag.NewFlagSet("start", pflag.ContinueOnError)
+	port := fs.IntP("port", "p", 443, "")
+	proto := fs.StringP("type", "t", "http", "")
+	if err := fs.Parse(args); err != nil {
+		c.ui.Send(fmt.Sprintf("[!] %v", err))
+		return
+	}
+
+	data := ListenStartReq{
+		Port:     *port,
+		Protocol: *proto,
+	}
+
+	body, err := json.Marshal(data)
+	if err != nil {
+		c.ui.Send(fmt.Sprintf("[!] Error Marshaling json: %v", err))
+		return
+	}
+	var StartResp ListenerStartResp
+	if err := c.http.DoPost("ts/rest/listeners/start", body, &StartResp); err != nil {
+		c.ui.Send(fmt.Sprintf("[!] Error Starting Listener: %v", err))
+		return
+
+	}
+
+	c.ui.Send(fmt.Sprintf("[*] Listener Started: %s", StartResp.Name))
+	return
+
 }

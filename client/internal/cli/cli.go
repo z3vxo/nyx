@@ -48,7 +48,7 @@ func (c *CLI) SetupDispatchTable() {
 		"list":      c.ListAgents,
 		"use":       c.ResolveAgent,
 		"back":      c.Back,
-		"listeners": c.ListListners,
+		"listeners": c.ParseListenerCmd,
 	}
 }
 

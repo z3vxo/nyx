@@ -31,7 +31,8 @@ type Broker struct {
 }
 
 type NewListener struct {
-	Port int `json:"port"`
+	Port     int    `json:"port"`
+	Protocol string `json:"protocol"`
 }
 
 type TeamServer struct {
@@ -43,9 +44,10 @@ type TeamServer struct {
 }
 
 type ListenerEntry struct {
-	Port   int
-	Name   string
-	Status string
+	Port     int    `json:"port"`
+	Name     string `json:"name"`
+	Protocol string `json:"protocol"`
+	Status   string `json:"status"`
 }
 
 type ListListenersResp struct {

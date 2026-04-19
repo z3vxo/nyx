@@ -22,13 +22,27 @@ type ResolveResp struct {
 	Guid string `json:"guid"`
 }
 
+// ----- Listener List response data -----
 type ListenerEntry struct {
-	Port   int
-	Name   string
-	Status string
+	Port     int
+	Name     string
+	Protocol string
+	Status   string
 }
 
 type ListListenersResp struct {
 	Total     int             `json:"total"`
 	Listeners []ListenerEntry `json:"listeners"`
+}
+
+//----- listener Start request data -----
+
+type ListenStartReq struct {
+	Port     int    `json:"port"`
+	Protocol string `json:"protocol"`
+}
+
+// Listener Start Response data
+type ListenerStartResp struct {
+	Name string `json:"listener_name"`
 }

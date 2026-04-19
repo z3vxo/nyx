@@ -26,6 +26,8 @@ type TeamServer struct {
 type HttpServer struct {
 	GetEndpoint  string            `yaml:"getEndpoint"`
 	PostEndpoint string            `yaml:"postEndpoint"`
+	Cert         string            `yaml:"tlsCert"`
+	Key          string            `yaml:"tlsKey"`
 	GetHeaders   map[string]string `yaml:"GetResponseHeaders"`
 	PostHeaders  map[string]string `yaml:"PostResponseHeaders"`
 	NotFoundFile string            `yaml:"404Path"`

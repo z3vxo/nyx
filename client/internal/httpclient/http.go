@@ -2,6 +2,7 @@ package httpclient
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -85,13 +86,23 @@ func (c *Client) ConnectToSSE() error {
 }
 
 func (c *Client) DoGet(endpoint string, out any) error {
-	fmt.Printf("DEBUG: %s%s", c.Hostname, endpoint)
 	req, err := http.NewRequest("GET", fmt.Sprintf("%s/%s", c.Hostname, endpoint), nil)
 	if err != nil {
 		return err
 	}
 	c.Auth.Apply(req)
 	return c.Do(req, out)
+}
+
+func (c *Client) DoPost(endpoint string, data []byte, out any) error {
+	req, err := http.NewRequest("POST", fmt.Sprintf("%s/%s", c.Hostname, endpoint), bytes.NewReader(data))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	c.Auth.Apply(req)
+	return c.Do(req, out)
+
 }
 
 func (c *Client) Do(req *http.Request, out any) error {

@@ -21,8 +21,8 @@ INSERT INTO commands (guid, command_type, task_id, param_1, param_2, executed, t
   ('test-guid-1234-abcd', 2, 'task-002', 'whoami', '', 0, 1776445202);
 
 -- listeners (new schema includes name column)
-INSERT INTO listeners (guid, port, name, status) VALUES
-  ('22ec4e97-40f8-4183-9247-c662504518c8', 8080, 'restored-listener', 'running');
+INSERT INTO listeners (guid, port, name, protocol, status) VALUES
+  ('22ec4e97-40f8-4183-9247-c662504518c8', 8080, 'restored-listener', 'http', 'running');
 
 EOF
 

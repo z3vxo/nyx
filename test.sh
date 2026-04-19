@@ -29,7 +29,7 @@ case "$1" in
         curl -s "http://localhost:50050/ts/rest/tasks/list/$2" -s -H "Authorization: Bearer $token" | jq
         ;;
     list_start)
-        curl -s "http://localhost:50050/ts/rest/listeners/start" -X POST -d '{"port":8081}' -H "Authorization: Bearer $token" | jq
+        curl -s "http://localhost:50050/ts/rest/listeners/start" -X POST -d '{"port":8000, "protocol":"https"}' -H "Authorization: Bearer $token" | jq
         ;;
     list_stop)
         curl -s "http://localhost:50050/ts/rest/listeners/stop/$2" -X POST -H "Authorization: Bearer $token" | jq

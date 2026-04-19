@@ -28,6 +28,7 @@ type Listener struct {
 	httpServer *http.Server
 	Port       int
 	Name       string
+	Protocol   string
 }
 
 type Listeners struct {
@@ -37,7 +38,7 @@ type Listeners struct {
 	PostEndpoint string
 }
 
-func BuildListenerHttp(port int) *http.Server {
+func BuildListenerHttp(port int, protocol string) *http.Server {
 	r := chi.NewRouter()
 	r.Get(config.Cfg.Server.GetEndpoint, server.AgentCheckInHandler)
 	r.Post(config.Cfg.Server.PostEndpoint, server.AgentUploadHandler)
@@ -49,6 +50,7 @@ func BuildListenerHttp(port int) *http.Server {
 		WriteTimeout: 30 * time.Second,
 		IdleTimeout:  60 * time.Second,
 	}
+
 }
 
 func (ts *TeamServer) StartListenersFromDB() error {
@@ -59,9 +61,10 @@ func (ts *TeamServer) StartListenersFromDB() error {
 	for _, l := range ToStart {
 		ts.Listeners.Mu.Lock()
 		ts.Listeners.ListenerMap[l.Guid] = Listener{
-			httpServer: BuildListenerHttp(l.Port),
+			httpServer: BuildListenerHttp(l.Port, l.Protocol),
 			Port:       l.Port,
 			Name:       l.Name,
+			Protocol:   l.Protocol,
 		}
 		ts.Listeners.Mu.Unlock()
 
@@ -76,7 +79,7 @@ func (ts *TeamServer) StartListenersFromDB() error {
 	return nil
 }
 
-func (ts *TeamServer) NewListener(port int) (string, error) {
+func (ts *TeamServer) NewListener(port int, Protocol string) (string, string, error) {
 	id := uuid.NewString()
 	name := generateListenerName()
 
@@ -84,25 +87,26 @@ func (ts *TeamServer) NewListener(port int) (string, error) {
 	for _, l := range ts.Listeners.ListenerMap {
 		if l.Port == port {
 			ts.Listeners.Mu.Unlock()
-			return "", errors.New("already Listening on port")
+			return "", "", errors.New("already Listening on port")
 		}
 	}
 
 	ts.Listeners.ListenerMap[id] = Listener{
-		httpServer: BuildListenerHttp(port),
+		httpServer: BuildListenerHttp(port, Protocol),
 		Port:       port,
 		Name:       name,
+		Protocol:   Protocol,
 	}
 	ts.Listeners.Mu.Unlock()
 
-	if err := ts.db.InsertListener(port, id, name); err != nil {
+	if err := ts.db.InsertListener(port, id, name, Protocol); err != nil {
 		ts.Listeners.Mu.Lock()
 		delete(ts.Listeners.ListenerMap, id)
 		ts.Listeners.Mu.Unlock()
-		return "", err
+		return "", "", err
 	}
 
-	return id, nil
+	return id, name, nil
 }
 
 func (ts *TeamServer) StartListener(id string) error {
@@ -114,7 +118,13 @@ func (ts *TeamServer) StartListener(id string) error {
 	}
 
 	go func() {
-		if err := l.httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		var err error
+		if l.Protocol == "https" {
+			err = l.httpServer.ListenAndServeTLS(config.Cfg.Server.Cert, config.Cfg.Server.Key)
+		} else {
+			err = l.httpServer.ListenAndServe()
+		}
+		if err != nil && err != http.ErrServerClosed {
 			fmt.Printf("listener %s error: %v\n", id, err)
 		}
 	}()
@@ -159,16 +169,18 @@ func (ts *TeamServer) StopAllListeners() {
 }
 
 func (ts *TeamServer) ListListeners() ([]ListenerEntry, error) {
-	ts.Listeners.Mu.Lock()
+	ts.Listeners.Mu.RLock()
+	defer ts.Listeners.Mu.RUnlock()
 
 	var listener []ListenerEntry
 	for _, i := range ts.Listeners.ListenerMap {
-		var l ListenerEntry
-		l.Port = i.Port
-		l.Name = i.Name
-		listener = append(listener, l)
+		listener = append(listener, ListenerEntry{
+			Port:     i.Port,
+			Name:     i.Name,
+			Protocol: i.Protocol,
+			Status:   "running",
+		})
 	}
-	ts.Listeners.Mu.Unlock()
 
 	return listener, nil
 }

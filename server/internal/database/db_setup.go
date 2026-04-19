@@ -100,6 +100,7 @@ func SetupDB(db *DB) error {
 		guid TEXT NOT NULL,
 		port INTEGER NOT NULL,
 		name TEXT NOT NULL,
+		protocol TEXT NOT NULL,
 		status TEXT NOT NULL);
 		`
 	_, err = db.conn.Exec(listeners_query)

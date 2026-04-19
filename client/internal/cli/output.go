@@ -7,13 +7,18 @@ import (
 	"github.com/chzyer/readline"
 )
 
+const (
+	dim = "\001\033[2m\033[4m\002"
+	rst = "\001\033[0m\002"
+)
+
 func (u *UI) SetPrompt(agent string) {
 	t := time.Now().Format("15:04:05")
+
 	if agent == "" {
-		u.rl.SetPrompt(fmt.Sprintf("\001\033[2m\033[4m\002[%s] kronos\001\033[0m\002 $> ", t))
+		u.rl.SetPrompt(fmt.Sprintf("[%s] %skronos%s $> ", t, dim, rst))
 	} else {
-		u.rl.SetPrompt(fmt.Sprintf("\001\033[2m\033[4m\002[%s] kronos\001\033[0m\002(\001\033[33m\002%s\001\033[0m\002) $> ", t,
-			agent))
+		u.rl.SetPrompt(fmt.Sprintf("[%s] %skronos%s (\001\033[33m\002%s%s) $> ", t, dim, rst, agent, rst))
 	}
 	u.rl.Refresh()
 }
