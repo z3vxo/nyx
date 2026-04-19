@@ -1,9 +1,9 @@
 package database
 
-func (db *DB) InsertListener(port int, id string) error {
-	query := `INSERT INTO listeners(port, guid, status) VALUES(?, ?, ?)`
+func (db *DB) InsertListener(port int, id, name string) error {
+	query := `INSERT INTO listeners(port, guid, name, status) VALUES(?, ?, ?, ?)`
 
-	_, err := db.conn.Exec(query, port, id, "running")
+	_, err := db.conn.Exec(query, port, id, name, "running")
 	if err != nil {
 		return err
 	}
@@ -23,10 +23,11 @@ func (db *DB) DeleteListener(id string) error {
 type ListenersToStart struct {
 	Guid string
 	Port int
+	Name string
 }
 
 func (db *DB) GetListeners() ([]ListenersToStart, error) {
-	q := `SELECT guid, port FROM listeners WHERE status='running'`
+	q := `SELECT guid, port, name FROM listeners WHERE status='running'`
 
 	rows, err := db.conn.Query(q)
 	if err != nil {
@@ -37,7 +38,7 @@ func (db *DB) GetListeners() ([]ListenersToStart, error) {
 	var Entrys []ListenersToStart
 	for rows.Next() {
 		var l ListenersToStart
-		err := rows.Scan(&l.Guid, &l.Port)
+		err := rows.Scan(&l.Guid, &l.Port, &l.Name)
 		if err != nil {
 			return nil, err
 		}

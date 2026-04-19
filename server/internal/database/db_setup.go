@@ -99,6 +99,7 @@ func SetupDB(db *DB) error {
 		id INTEGER PRIMARY KEY,
 		guid TEXT NOT NULL,
 		port INTEGER NOT NULL,
+		name TEXT NOT NULL,
 		status TEXT NOT NULL);
 		`
 	_, err = db.conn.Exec(listeners_query)

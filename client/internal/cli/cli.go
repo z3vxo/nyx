@@ -11,12 +11,9 @@ import (
 	"github.com/z3vxo/kronos/internal/httpclient"
 )
 
-const prompt = "\001\033[2m\033[4m\002kronos\001\033[0m\002 $> "
-
 type CLI struct {
 	http          *httpclient.Client
-	rl            *readline.Instance
-	Out           *Output
+	ui            *UI
 	ClientInUse   string
 	dispatchTable map[string]HandlerFunc
 }
@@ -29,17 +26,16 @@ func NewCli() (*CLI, error) {
 		return nil, err
 	}
 
-	rl, err := readline.New(prompt)
+	rl, err := NewUI()
 	if err != nil {
 		return nil, err
 	}
 
 	c := &CLI{
 		http: h,
-		rl:   rl,
-		Out:  &Output{ch: make(chan string, 32), prompt: prompt},
+		ui:   rl,
 	}
-	go c.Out.Run()
+	go c.ui.Run()
 	c.SetupDispatchTable()
 
 	go h.ConnectToSSE()
@@ -49,22 +45,21 @@ func NewCli() (*CLI, error) {
 
 func (c *CLI) SetupDispatchTable() {
 	c.dispatchTable = map[string]HandlerFunc{
-		"list": c.ListAgents,
+		"list":      c.ListAgents,
+		"use":       c.ResolveAgent,
+		"back":      c.Back,
+		"listeners": c.ListListners,
 	}
 }
 
 func (c *CLI) Close() {
-	c.rl.Close()
-}
-
-func (c *CLI) Split(input string) ([]string, error) {
-	return shlex.Split(input)
+	c.ui.rl.Close()
 }
 
 func (c *CLI) Dispatch(cmd []string) {
 	fn, ok := c.dispatchTable[cmd[0]]
 	if !ok {
-		c.Out.Send(fmt.Sprintf("[!] Unknown command: %s", cmd[0]))
+		c.ui.Send(fmt.Sprintf("[!] Unknown command: %s", cmd[0]))
 		return
 	}
 	go fn(cmd[1:])
@@ -73,12 +68,12 @@ func (c *CLI) Dispatch(cmd []string) {
 func (c *CLI) Run() {
 	defer c.Close()
 	for {
-		input, err := c.rl.Readline()
+		input, err := c.ui.rl.Readline()
 		if err == io.EOF || err == readline.ErrInterrupt {
 			break
 		}
 		if err != nil {
-			c.Out.Send(fmt.Sprintf("error: %v", err))
+			c.ui.Send(fmt.Sprintf("error: %v", err))
 			break
 		}
 		input = strings.TrimSpace(input)
@@ -86,9 +81,9 @@ func (c *CLI) Run() {
 			continue
 		}
 
-		cmd, err := c.Split(input)
+		cmd, err := shlex.Split(input)
 		if err != nil {
-			c.Out.Send("[!] Failed parsing input")
+			c.ui.Send("[!] Failed parsing input")
 			continue
 		}
 
@@ -97,7 +92,7 @@ func (c *CLI) Run() {
 			os.Exit(0)
 		}
 
-		c.rl.SaveHistory(input)
+		c.ui.rl.SaveHistory(input)
 		c.Dispatch(cmd)
 	}
 }

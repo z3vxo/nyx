@@ -85,6 +85,7 @@ func (c *Client) ConnectToSSE() error {
 }
 
 func (c *Client) DoGet(endpoint string, out any) error {
+	fmt.Printf("DEBUG: %s%s", c.Hostname, endpoint)
 	req, err := http.NewRequest("GET", fmt.Sprintf("%s/%s", c.Hostname, endpoint), nil)
 	if err != nil {
 		return err

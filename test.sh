@@ -1,8 +1,8 @@
 #!/bin/bash
 
 
-token=$(curl http://localhost:50050/ts/rest/login -s -d '{"user":"kronos", "passwd":"kronospwd"}' | jq -r '.token')
-
+token=$(curl http://localhost:50050/ts/rest/login -s -d '{"username":"kronos", "password":"kronospwd"}' | jq -r '.token')
+echo "$token"
 
 #curl -s http://localhost:3000/rest/agents -s -H "Authorization: Bearer $token" | jq
 
@@ -29,7 +29,7 @@ case "$1" in
         curl -s "http://localhost:50050/ts/rest/tasks/list/$2" -s -H "Authorization: Bearer $token" | jq
         ;;
     list_start)
-        curl -s "http://localhost:50050/ts/rest/listeners/start" -X POST -d '{"port":8080}' -H "Authorization: Bearer $token" | jq
+        curl -s "http://localhost:50050/ts/rest/listeners/start" -X POST -d '{"port":8081}' -H "Authorization: Bearer $token" | jq
         ;;
     list_stop)
         curl -s "http://localhost:50050/ts/rest/listeners/stop/$2" -X POST -H "Authorization: Bearer $token" | jq

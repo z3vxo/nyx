@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math/rand"
 	"net/http"
 	"sync"
 	"time"
@@ -14,9 +15,19 @@ import (
 	"github.com/z3vxo/kronos/internal/server"
 )
 
+var listenerAdjectives = []string{"silent", "ghost", "iron", "shadow", "crimson", "steel", "hollow", "obsidian", "frozen", "ashen"}
+var listenerNouns = []string{"falcon", "specter", "anvil", "wraith", "ember", "vault", "cipher", "nexus", "bastion", "phantom"}
+
+func generateListenerName() string {
+	adj := listenerAdjectives[rand.Intn(len(listenerAdjectives))]
+	noun := listenerNouns[rand.Intn(len(listenerNouns))]
+	return fmt.Sprintf("%s-%s", adj, noun)
+}
+
 type Listener struct {
 	httpServer *http.Server
 	Port       int
+	Name       string
 }
 
 type Listeners struct {
@@ -50,6 +61,7 @@ func (ts *TeamServer) StartListenersFromDB() error {
 		ts.Listeners.ListenerMap[l.Guid] = Listener{
 			httpServer: BuildListenerHttp(l.Port),
 			Port:       l.Port,
+			Name:       l.Name,
 		}
 		ts.Listeners.Mu.Unlock()
 
@@ -66,6 +78,7 @@ func (ts *TeamServer) StartListenersFromDB() error {
 
 func (ts *TeamServer) NewListener(port int) (string, error) {
 	id := uuid.NewString()
+	name := generateListenerName()
 
 	ts.Listeners.Mu.Lock()
 	for _, l := range ts.Listeners.ListenerMap {
@@ -78,10 +91,11 @@ func (ts *TeamServer) NewListener(port int) (string, error) {
 	ts.Listeners.ListenerMap[id] = Listener{
 		httpServer: BuildListenerHttp(port),
 		Port:       port,
+		Name:       name,
 	}
 	ts.Listeners.Mu.Unlock()
 
-	if err := ts.db.InsertListener(port, id); err != nil {
+	if err := ts.db.InsertListener(port, id, name); err != nil {
 		ts.Listeners.Mu.Lock()
 		delete(ts.Listeners.ListenerMap, id)
 		ts.Listeners.Mu.Unlock()
@@ -89,7 +103,6 @@ func (ts *TeamServer) NewListener(port int) (string, error) {
 	}
 
 	return id, nil
-
 }
 
 func (ts *TeamServer) StartListener(id string) error {
@@ -143,4 +156,19 @@ func (ts *TeamServer) StopAllListeners() {
 	for _, l := range listeners {
 		l.httpServer.Shutdown(ctx)
 	}
+}
+
+func (ts *TeamServer) ListListeners() ([]ListenerEntry, error) {
+	ts.Listeners.Mu.Lock()
+
+	var listener []ListenerEntry
+	for _, i := range ts.Listeners.ListenerMap {
+		var l ListenerEntry
+		l.Port = i.Port
+		l.Name = i.Name
+		listener = append(listener, l)
+	}
+	ts.Listeners.Mu.Unlock()
+
+	return listener, nil
 }

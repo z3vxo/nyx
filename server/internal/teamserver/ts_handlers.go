@@ -175,3 +175,18 @@ func (ts *TeamServer) loginHandler(w http.ResponseWriter, r *http.Request) {
 
 	json.NewEncoder(w).Encode(map[string]string{"token": token, "refresh": refresh})
 }
+
+func (ts *TeamServer) ListListenerHandler(w http.ResponseWriter, r *http.Request) {
+	data, err := ts.ListListeners()
+	if err != nil {
+		httputil.SendJSONError(w, "Failed Listing Listeners", http.StatusInternalServerError)
+		return
+	}
+	res := ListListenersResp{
+		Total:     len(data),
+		Listeners: data,
+	}
+
+	json.NewEncoder(w).Encode(res)
+
+}

@@ -41,3 +41,14 @@ type TeamServer struct {
 	db         *database.DB
 	Listeners  *Listeners
 }
+
+type ListenerEntry struct {
+	Port   int
+	Name   string
+	Status string
+}
+
+type ListListenersResp struct {
+	Total     int             `json:"total"`
+	Listeners []ListenerEntry `json:"listeners"`
+}

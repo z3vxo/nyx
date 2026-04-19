@@ -17,3 +17,18 @@ type Agents struct {
 	Total int     `json:"total"`
 	Agent []Agent `json:"agents"`
 }
+
+type ResolveResp struct {
+	Guid string `json:"guid"`
+}
+
+type ListenerEntry struct {
+	Port   int
+	Name   string
+	Status string
+}
+
+type ListListenersResp struct {
+	Total     int             `json:"total"`
+	Listeners []ListenerEntry `json:"listeners"`
+}
