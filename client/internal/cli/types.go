@@ -46,3 +46,7 @@ type ListenStartReq struct {
 type ListenerStartResp struct {
 	Name string `json:"listener_name"`
 }
+
+type Generic200 struct {
+	Status string `json:"status"`
+}

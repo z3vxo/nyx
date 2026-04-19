@@ -60,7 +60,7 @@ func (ts *TeamServer) Start() error {
 
 			r.Get("/rest/listeners/list", ts.ListListenerHandler)
 			r.Post("/rest/listeners/start", ts.StartListenerHandler)
-			r.Post("/rest/listeners/stop/{guid}", ts.StopListenerHandler)
+			r.Post("/rest/listeners/stop/{name}", ts.StopListenerHandler)
 
 		})
 	})

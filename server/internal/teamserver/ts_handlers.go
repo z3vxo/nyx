@@ -104,48 +104,6 @@ func (ts *TeamServer) ListTasksHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func (ts *TeamServer) StartListenerHandler(w http.ResponseWriter, r *http.Request) {
-	var Info NewListener
-	if err := json.NewDecoder(r.Body).Decode(&Info); err != nil {
-		httputil.SendJSONError(w, "Failed decoding json", http.StatusInternalServerError)
-		return
-	}
-
-	id, name, err := ts.NewListener(Info.Port, Info.Protocol)
-	if err != nil {
-		fmt.Println(err)
-		httputil.SendJSONError(w, "failed Creating listener", http.StatusInternalServerError)
-		return
-	}
-
-	if err := ts.StartListener(id); err != nil {
-		httputil.SendJSONError(w, "failed starting listener", http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]string{"listener_name": name})
-}
-
-func (ts *TeamServer) StopListenerHandler(w http.ResponseWriter, r *http.Request) {
-	guid := chi.URLParam(r, "guid")
-	if guid == "" {
-		httputil.SendJSONError(w, "missing guid", http.StatusBadRequest)
-		return
-	}
-
-	err := ts.StopListener(guid)
-	if err != nil {
-		httputil.SendJSONError(w, "failed deleting listener from db", http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]string{"status": "OK"})
-}
-
 func (ts *TeamServer) loginHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
@@ -189,4 +147,59 @@ func (ts *TeamServer) ListListenerHandler(w http.ResponseWriter, r *http.Request
 
 	json.NewEncoder(w).Encode(res)
 
+}
+
+func (ts *TeamServer) StartListenerHandler(w http.ResponseWriter, r *http.Request) {
+	var Info NewListener
+	if err := json.NewDecoder(r.Body).Decode(&Info); err != nil {
+		httputil.SendJSONError(w, "Failed decoding json", http.StatusInternalServerError)
+		return
+	}
+
+	id, name, err := ts.NewListener(Info.Port, Info.Protocol)
+	if err != nil {
+		fmt.Println(err)
+		httputil.SendJSONError(w, "failed Creating listener", http.StatusInternalServerError)
+		return
+	}
+
+	if err := ts.StartListener(id); err != nil {
+		httputil.SendJSONError(w, "failed starting listener", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{"listener_name": name})
+}
+
+func (ts *TeamServer) StopListenerHandler(w http.ResponseWriter, r *http.Request) {
+	name := chi.URLParam(r, "name")
+	if name == "" {
+		httputil.SendJSONError(w, "missing listener name", http.StatusBadRequest)
+		return
+	}
+
+	var guid string
+	ts.Listeners.Mu.Lock()
+	for i, l := range ts.Listeners.ListenerMap {
+		if l.Name == name {
+			guid = i
+		}
+	}
+	ts.Listeners.Mu.Unlock()
+	if guid == "" {
+		httputil.SendJSONError(w, "listener not found", http.StatusNotFound)
+		return
+	}
+
+	err := ts.StopListener(guid)
+	if err != nil {
+		httputil.SendJSONError(w, "failed deleting listener from db", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{"status": "OK"})
 }

@@ -95,14 +95,19 @@ func (c *Client) DoGet(endpoint string, out any) error {
 }
 
 func (c *Client) DoPost(endpoint string, data []byte, out any) error {
-	req, err := http.NewRequest("POST", fmt.Sprintf("%s/%s", c.Hostname, endpoint), bytes.NewReader(data))
+	var body *bytes.Reader
+	if data != nil {
+		body = bytes.NewReader(data)
+	} else {
+		body = bytes.NewReader([]byte{})
+	}
+	req, err := http.NewRequest("POST", fmt.Sprintf("%s/%s", c.Hostname, endpoint), body)
 	if err != nil {
 		return err
 	}
 	req.Header.Set("Content-Type", "application/json")
 	c.Auth.Apply(req)
 	return c.Do(req, out)
-
 }
 
 func (c *Client) Do(req *http.Request, out any) error {
@@ -118,5 +123,8 @@ func (c *Client) Do(req *http.Request, out any) error {
 		return fmt.Errorf("[!] Error: %s", e.ErrorStr)
 	}
 
+	if out == nil {
+		return nil
+	}
 	return json.NewDecoder(resp.Body).Decode(out)
 }

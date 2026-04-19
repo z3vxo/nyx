@@ -82,13 +82,28 @@ func (c *CLI) ParseListenerCmd(args []string) {
 
 	switch args[0] {
 	case "stop":
-		c.ui.Send("[+] Stopping Listener...")
+		if args[1] == "" {
+			c.ui.Send("[!] Must provide listener name")
+		}
+		c.StopListener(args[1])
 	case "start":
 		c.StartListener(args[1:])
 		//c.StopListener()
 	default:
 		c.ui.Send(fmt.Sprintf("[!] Unknown subcommand: %s", args[0]))
 	}
+}
+
+func (c *CLI) StopListener(name string) {
+	endpoint := fmt.Sprintf("ts/rest/listeners/stop/%s", name)
+	if err := c.http.DoPost(endpoint, nil, nil); err != nil {
+		c.ui.Send(fmt.Sprintf("[!] Failed Stopping Listener: %s", err))
+		return
+	}
+
+	c.ui.Send(fmt.Sprintf("[*] Stopped Listener %s", name))
+	return
+
 }
 
 func (c *CLI) ListListners() {
