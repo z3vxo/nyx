@@ -49,6 +49,8 @@ func (c *CLI) SetupDispatchTable() {
 		"use":       c.ResolveAgent,
 		"back":      c.Back,
 		"listeners": c.ParseListenerCmd,
+		"info":      c.ListAgentInfo,
+		"help":      c.Help,
 	}
 }
 
@@ -83,7 +85,7 @@ func (c *CLI) Run() {
 
 		cmd, err := shlex.Split(input)
 		if err != nil {
-			c.ui.Send("[!] Failed parsing input")
+			c.ui.Send(BAD.Sprint("Failed parsing input"))
 			continue
 		}
 
@@ -91,8 +93,37 @@ func (c *CLI) Run() {
 			c.Close()
 			os.Exit(0)
 		}
-
 		c.ui.rl.SaveHistory(input)
+
 		c.Dispatch(cmd)
 	}
+}
+
+func (c *CLI) Help(args []string) {
+	c.ui.Send("\n")
+	c.ui.Send("\033[1;35m  ██╗  ██╗██████╗  ██████╗ ███╗   ██╗ ██████╗ ███████╗\033[0m")
+	c.ui.Send("\033[1;35m  ██║ ██╔╝██╔══██╗██╔═══██╗████╗  ██║██╔═══██╗██╔════╝\033[0m")
+	c.ui.Send("\033[1;35m  █████╔╝ ██████╔╝██║   ██║██╔██╗ ██║██║   ██║███████╗\033[0m")
+	c.ui.Send("\033[1;35m  ██╔═██╗ ██╔══██╗██║   ██║██║╚██╗██║██║   ██║╚════██║\033[0m")
+	c.ui.Send("\033[1;35m  ██║  ██╗██║  ██║╚██████╔╝██║ ╚████║╚██████╔╝███████║\033[0m")
+	c.ui.Send("\033[1;35m  ╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═══╝ ╚═════╝ ╚══════╝\033[0m")
+	c.ui.Send("")
+	c.ui.Send("\033[1;37m  AGENTS\033[0m")
+	c.ui.Send(fmt.Sprintf("  \033[1;36m%-40s\033[0m %s", "list", "list all connected agents"))
+	c.ui.Send(fmt.Sprintf("  \033[1;36m%-40s\033[0m %s", "use <codename>", "interact with an agent"))
+	c.ui.Send(fmt.Sprintf("  \033[1;36m%-40s\033[0m %s", "info", "detailed info on current agent"))
+	c.ui.Send(fmt.Sprintf("  \033[1;36m%-40s\033[0m %s", "back", "stop using current agent"))
+	c.ui.Send("")
+	c.ui.Send("\033[1;37m  LISTENERS\033[0m")
+	c.ui.Send(fmt.Sprintf("  \033[1;36m%-40s\033[0m %s", "listeners", "list active listeners"))
+	c.ui.Send(fmt.Sprintf("  \033[1;36m%-40s\033[0m %s", "listeners start -p <port> -t <proto>", "start listener (proto: http|https)"))
+	c.ui.Send(fmt.Sprintf("  \033[1;36m%-40s\033[0m %s", "listeners stop <name>", "stop a listener"))
+	c.ui.Send("")
+	c.ui.Send("\033[1;37m  COMMANDS\033[0m")
+	c.ui.Send(fmt.Sprintf("  \033[1;36m%-40s\033[0m %s", "getprivs", "get current users privileges"))
+	c.ui.Send(fmt.Sprintf("  \033[1;36m%-40s\033[0m %s", "cd <dir>", "change directory"))
+	c.ui.Send(fmt.Sprintf("  \033[1;36m%-40s\033[0m %s", "ls <dir>", "list a directory"))
+	c.ui.Send(fmt.Sprintf("  \033[1;36m%-40s\033[0m %s", "cat <file>", "read a file"))
+	c.ui.Send(fmt.Sprintf("  \033[1;36m%-40s\033[0m %s", "whoami", "list current users identity"))
+
 }

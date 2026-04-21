@@ -120,6 +120,7 @@ func (ts *TeamServer) StartListener(id string) error {
 		return errors.New("listener not found")
 	}
 
+	errCh := make(chan error, 1)
 	go func() {
 		var err error
 		if l.Protocol == "https" {
@@ -128,11 +129,17 @@ func (ts *TeamServer) StartListener(id string) error {
 			err = l.httpServer.ListenAndServe()
 		}
 		if err != nil && err != http.ErrServerClosed {
-			fmt.Printf("listener %s error: %v\n", id, err)
+			ts.db.DeleteListener(id)
+			errCh <- err
 		}
 	}()
 
-	return nil
+	select {
+	case err := <-errCh:
+		return err
+	case <-time.After(100 * time.Millisecond):
+		return nil
+	}
 }
 
 func (ts *TeamServer) StopListener(id string, user string) error {

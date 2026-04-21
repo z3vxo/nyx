@@ -56,3 +56,16 @@ type ListListenersResp struct {
 	Total     int             `json:"total"`
 	Listeners []ListenerEntry `json:"listeners"`
 }
+
+type AgentInfoResp struct {
+	User         string `json:"username"`
+	Host         string `json:"hostname"`
+	ProcPath     string `json:"proc_path`
+	Pid          int32  `json:"pid"`
+	WinVer       string `json:"win_version`
+	InternalIP   string `json:"internal_ip"`
+	ExternalIP   string `json:"external_ip"`
+	IsElevated   bool   `json:"is_elev`
+	LastCheckin  int64  `json:"last_checkin"`
+	RegisterTime int64  `json:"reg_date`
+}

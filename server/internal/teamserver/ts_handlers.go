@@ -17,6 +17,7 @@ func (ts *TeamServer) AgentListHandler(w http.ResponseWriter, r *http.Request) {
 
 	agents, err := ts.db.ListAgents()
 	if err != nil {
+		fmt.Println(err)
 		httputil.SendJSONError(w, "Failed retreiving agents", http.StatusInternalServerError)
 		return
 	}
@@ -47,6 +48,43 @@ func (ts *TeamServer) AgentResolveHandler(w http.ResponseWriter, r *http.Request
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]string{"guid": AgentGuid})
+}
+
+func (ts *TeamServer) AgentInfoHandler(w http.ResponseWriter, r *http.Request) {
+	Name := chi.URLParam(r, "codename")
+	if Name == "" {
+		httputil.SendJSONError(w, "Missing Codename", http.StatusBadRequest)
+		return
+	}
+
+	AgentInfo, err := ts.db.ListAgentInfo(Name)
+	if err != nil {
+		fmt.Println(err)
+		if errors.Is(err, sql.ErrNoRows) {
+			httputil.SendJSONError(w, "agent not found", http.StatusNotFound)
+			return
+		}
+		httputil.SendJSONError(w, "database error", http.StatusInternalServerError)
+		return
+	}
+
+	resp := AgentInfoResp{
+		User:         AgentInfo.User,
+		Host:         AgentInfo.Host,
+		ProcPath:     AgentInfo.ProcPath,
+		Pid:          AgentInfo.Pid,
+		WinVer:       AgentInfo.WinVer,
+		InternalIP:   AgentInfo.InternalIP,
+		ExternalIP:   AgentInfo.ExternalIP,
+		IsElevated:   AgentInfo.IsElevated,
+		LastCheckin:  AgentInfo.LastCheckin,
+		RegisterTime: AgentInfo.RegisterTime,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(&resp)
+
 }
 
 func (ts *TeamServer) CommandNewHandler(w http.ResponseWriter, r *http.Request) {
@@ -163,12 +201,12 @@ func (ts *TeamServer) StartListenerHandler(w http.ResponseWriter, r *http.Reques
 	id, name, err := ts.NewListener(Info.Port, Info.Protocol, user)
 	if err != nil {
 		fmt.Println(err)
-		httputil.SendJSONError(w, "failed Creating listener", http.StatusInternalServerError)
+		httputil.SendJSONError(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	if err := ts.StartListener(id); err != nil {
-		httputil.SendJSONError(w, "failed starting listener", http.StatusInternalServerError)
+		httputil.SendJSONError(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 

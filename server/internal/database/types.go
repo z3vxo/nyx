@@ -11,6 +11,7 @@ type Agent struct {
 	ProcPath   string `json:"proc_path"`
 	WinVer     string `json:"winver"`
 	LastSeen   int64  `json:"last_checkin"`
+	RegDate    int64  `json:"reg_date"`
 }
 
 type Agents struct {

@@ -120,7 +120,7 @@ func (c *Client) Do(req *http.Request, out any) error {
 	if resp.StatusCode != http.StatusOK {
 		var e ErrorRes
 		_ = json.NewDecoder(resp.Body).Decode(&e)
-		return fmt.Errorf("[!] Error: %s", e.ErrorStr)
+		return fmt.Errorf("%s | %d", e.ErrorStr, resp.StatusCode)
 	}
 
 	if out == nil {
