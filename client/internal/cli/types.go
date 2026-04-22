@@ -41,7 +41,8 @@ type ListenerEntry struct {
 	Port     int
 	Name     string
 	Protocol string
-	Status   string
+	Status   bool
+	Host     string
 }
 
 type ListListenersResp struct {
@@ -54,6 +55,8 @@ type ListListenersResp struct {
 type ListenStartReq struct {
 	Port     int    `json:"port"`
 	Protocol string `json:"protocol"`
+	Host     string `json:"host"`
+	CertType bool   `json:"letsencrypt"` // 0 = self signed, 1 = lets encrypt
 }
 
 // Listener Start Response data

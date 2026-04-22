@@ -167,13 +167,13 @@ func (c *CLI) ListListners() {
 
 	var buf bytes.Buffer
 	w := tabwriter.NewWriter(&buf, 0, 0, 3, ' ', 0)
-	fmt.Fprintln(w, "--------\t----\t--------\t------")
-	fmt.Fprintln(w, "NAME\tPORT\tPROTOCOL\tSTATUS")
-	fmt.Fprintln(w, "--------\t----\t--------\t------")
+	fmt.Fprintln(w, "--------\t----\t--------\t----\t------")
+	fmt.Fprintln(w, "NAME\tPORT\tPROTOCOL\tHOST\tSTATUS")
+	fmt.Fprintln(w, "--------\t----\t--------\t----\t------")
 
 	for _, i := range r.Listeners {
-		fmt.Fprintf(w, "%s\t%d\t%s\t%s\n",
-			i.Name, i.Port, i.Protocol, "RUNNING")
+		fmt.Fprintf(w, "%s\t%d\t%s\t%s\t%s\n",
+			i.Name, i.Port, i.Protocol, i.Host, "RUNNING")
 	}
 	w.Flush()
 	c.ui.Send(buf.String())
@@ -183,14 +183,23 @@ func (c *CLI) StartListener(args []string) {
 	fs := pflag.NewFlagSet("start", pflag.ContinueOnError)
 	port := fs.IntP("port", "p", 443, "")
 	proto := fs.StringP("type", "t", "http", "")
+	host := fs.StringP("host", "h", "", "")
+	cert := fs.BoolP("lets-encrypt", "l", false, "")
 	if err := fs.Parse(args); err != nil {
 		c.ui.Send(ui.WARN.Sprintf("[!] %v", err))
+		return
+	}
+
+	if *host == "" {
+		c.ui.Send(ui.WARN.Sprint("Must provide host"))
 		return
 	}
 
 	data := ListenStartReq{
 		Port:     *port,
 		Protocol: *proto,
+		Host:     *host,
+		CertType: *cert,
 	}
 
 	body, err := json.Marshal(data)
