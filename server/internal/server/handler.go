@@ -71,7 +71,7 @@ func (h *AgentHandler) HandleClientRegister(ip string, r *bytes.Reader) error {
 	err = h.DB.InsertAgent(Client.Guid, CodeName,
 		Client.User, Client.Host,
 		Client.InternaIP, Client.ExternalIP,
-		Client.ProcPath, ver, Client.Pid, Client.IsElev)
+		Client.ProcPath, ver, Client.Pid, Client.Ppid, Client.IsElev, Client.Arch)
 	if err != nil {
 		return err
 	}

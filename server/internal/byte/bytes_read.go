@@ -65,8 +65,12 @@ func (r *Reader) ReadString(len int32) string {
  * [PROCESS_PATH STR] N BYTES
  * ->
  * [PID] 4 BYTES
+ * -->
+ * [PPID] 4 BYTES
  * ->
  * [IS ELEVATED] 1 BYTE
+ * ->
+ * [ARCH] 1 BYTE | 1 == x64, 0 == x86
  * ->
  * [MINOR VERSION] 2 BYTES
  * [MAJOR VERSION] 2 BYTES
@@ -82,7 +86,9 @@ type ClientRegister struct {
 	ExternalIP string
 	ProcPath   string
 	Pid        int32
+	Ppid       int32
 	IsElev     byte
+	Arch       byte
 	Minor      int16
 	Major      int16
 	Build      int16
@@ -97,7 +103,9 @@ func ExtractRegistrationDetails(IP string, r *bytes.Reader) (ClientRegister, err
 	InternalIP := rd.ReadString(rd.Read4())
 	ProcessPath := rd.ReadString(rd.Read4())
 	Pid := rd.Read4()
+	PPid := rd.Read4()
 	IsElev := rd.Read1()
+	Arch := rd.Read1()
 	Minor := rd.Read2()
 	Major := rd.Read2()
 	BuildVer := rd.Read2()
@@ -113,7 +121,9 @@ func ExtractRegistrationDetails(IP string, r *bytes.Reader) (ClientRegister, err
 		ExternalIP: IP,
 		ProcPath:   ProcessPath,
 		Pid:        Pid,
+		Ppid:       PPid,
 		IsElev:     IsElev,
+		Arch:       Arch,
 		Minor:      Minor,
 		Major:      Major,
 		Build:      BuildVer,

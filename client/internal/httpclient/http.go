@@ -79,9 +79,13 @@ func (c *Client) ConnectToSSE() error {
 		}
 		switch event.CmdType {
 		case TYPE_NEW_AGENT:
-			c.UI.Send(ui.INFO.Sprintf("New Agent Connect %s", event.User.Username))
+			c.UI.Send(ui.INFO.Sprint("New Agent Connected"))
+			c.UI.Send(ui.INFO.Sprintf_tab("Username: %s", event.User.Username))
+			c.UI.Send(ui.INFO.Sprintf_tab("Hostname: %s", event.User.HostName))
 		case TYPE_CMD_OUTPUT:
 			fmt.Println(event.Data.Output)
+		case TYPE_HEARTBEAT:
+			continue
 		}
 	}
 	return nil

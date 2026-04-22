@@ -45,14 +45,14 @@ func (db *DB) ResolveCodename(name string) (string, error) {
 	return guid, nil
 }
 
-func (db *DB) InsertAgent(guid, codeName, User, Host, InIP, ExIP, ProcPath, WinVer string, Pid int32, IsElev byte) error {
+func (db *DB) InsertAgent(guid, codeName, User, Host, InIP, ExIP, ProcPath, WinVer string, Pid, PPid int32, IsElev, Arch byte) error {
 	query := `INSERT INTO agents(guid, code_name,
 	  						username, hostname,
 							external_ip, internal_ip,
-							is_elevated, pid, process_path,
+							is_elevated, arch, pid,ppid, process_path,
 							windows_version, session_key, last_checkin, registration_date) VALUES(
-							?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-	_, err := db.conn.Exec(query, guid, codeName, User, Host, ExIP, InIP, IsElev, Pid, ProcPath, WinVer, "32324234", time.Now().UTC().Unix(), time.Now().UTC().Unix())
+							?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+	_, err := db.conn.Exec(query, guid, codeName, User, Host, ExIP, InIP, IsElev, Arch, Pid, PPid, ProcPath, WinVer, "32324234", time.Now().UTC().Unix(), time.Now().UTC().Unix())
 	if err != nil {
 		fmt.Println(err)
 		return err
@@ -65,24 +65,30 @@ type AgentInfo struct {
 	Host         string
 	ProcPath     string
 	Pid          int32
+	PPid         int32
 	WinVer       string
 	InternalIP   string
 	ExternalIP   string
 	IsElevated   bool
+	Arch         byte
 	LastCheckin  int64
 	RegisterTime int64
 }
 
 func (db *DB) ListAgentInfo(name string) (AgentInfo, error) {
 	q := `SELECT username, hostname,
-			     process_path, pid, windows_version,
+			     process_path, pid, ppid, windows_version,
 				 internal_ip, external_ip,
-				 is_elevated, last_checkin, registration_date
+				 is_elevated,arch, last_checkin, registration_date
 		  FROM agents WHERE code_name = ?`
 
 	var a AgentInfo
+	var arch bool
 
-	err := db.conn.QueryRow(q, name).Scan(&a.User, &a.Host, &a.ProcPath, &a.Pid, &a.WinVer, &a.InternalIP, &a.ExternalIP, &a.IsElevated, &a.LastCheckin, &a.RegisterTime)
+	err := db.conn.QueryRow(q, name).Scan(&a.User, &a.Host, &a.ProcPath, &a.Pid, &a.PPid, &a.WinVer, &a.InternalIP, &a.ExternalIP, &a.IsElevated, &arch, &a.LastCheckin, &a.RegisterTime)
+	if arch {
+		a.Arch = 1
+	}
 	if err != nil {
 		fmt.Println(err)
 

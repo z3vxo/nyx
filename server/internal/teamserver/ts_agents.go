@@ -72,10 +72,12 @@ func (ts *TeamServer) AgentInfoHandler(w http.ResponseWriter, r *http.Request) {
 		Host:         AgentInfo.Host,
 		ProcPath:     AgentInfo.ProcPath,
 		Pid:          AgentInfo.Pid,
+		PPid:         AgentInfo.PPid,
 		WinVer:       AgentInfo.WinVer,
 		InternalIP:   AgentInfo.InternalIP,
 		ExternalIP:   AgentInfo.ExternalIP,
 		IsElevated:   AgentInfo.IsElevated,
+		Arch:         AgentInfo.Arch,
 		LastCheckin:  AgentInfo.LastCheckin,
 		RegisterTime: AgentInfo.RegisterTime,
 	}

@@ -1,6 +1,7 @@
 package broker
 
 import (
+	"encoding/json"
 	"fmt"
 	"math/rand"
 	"net/http"
@@ -78,7 +79,8 @@ func (b *Broker) EventHandler(w http.ResponseWriter, r *http.Request) {
 			fmt.Fprintf(w, "data: %s\n\n", msg)
 			flusher.Flush()
 		case <-heart.C:
-			fmt.Fprint(w, "data: ping\n\n")
+			data, _ := json.Marshal(map[string]int{"type": 3})
+			fmt.Fprint(w, "data: %s\n\n", data)
 			flusher.Flush()
 		}
 	}

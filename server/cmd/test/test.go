@@ -40,7 +40,15 @@ func buildRegisterPayload() []byte {
 	binary.LittleEndian.PutUint32(pid, 1337)
 	buf.Write(pid)
 
+	// PPID - 4 bytes LE
+	ppid := make([]byte, 4)
+	binary.LittleEndian.PutUint32(ppid, 512)
+	buf.Write(ppid)
+
 	// IS_ELEVATED - 1 byte
+	buf.WriteByte(1)
+
+	// ARCH - 1 byte (1 = x64, 0 = x86)
 	buf.WriteByte(1)
 
 	// MINOR VERSION - 2 bytes LE

@@ -16,9 +16,10 @@ const (
 	BAD  tag = "\033[1;31m[-]\033[0m "
 )
 
-func (t tag) Sprint(msg string) string          { return string(t) + msg }
-func (t tag) Sprintf(f string, a ...any) string { return string(t) + fmt.Sprintf(f, a...) }
-func (t tag) Sprint_tab(msg string) string      { return string("\t"+t) + msg }
+func (t tag) Sprint(msg string) string              { return string(t) + msg }
+func (t tag) Sprintf(f string, a ...any) string     { return string(t) + fmt.Sprintf(f, a...) }
+func (t tag) Sprint_tab(msg string) string          { return string("\t"+t) + msg }
+func (t tag) Sprintf_tab(f string, a ...any) string { return string("\t"+t) + fmt.Sprintf(f, a...) }
 
 const (
 	dim = "\001\033[2m\033[4m\002"

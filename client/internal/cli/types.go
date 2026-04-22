@@ -19,12 +19,14 @@ type AgentInfoResp struct {
 	Host         string `json:"hostname"`
 	ProcPath     string `json:"proc_path`
 	Pid          int32  `json:"pid"`
+	PPid         int32  `json:"ppid"`
 	WinVer       string `json:"win_version`
 	InternalIP   string `json:"internal_ip"`
 	ExternalIP   string `json:"external_ip"`
 	IsElevated   bool   `json:"is_elev`
-	LastCheckin  int32  `json:"last_checkin"`
-	RegisterTime int32  `json:"reg_date`
+	Arch         byte   `json:"arch"`
+	LastCheckin  int64  `json:"last_checkin"`
+	RegisterTime int64  `json:"reg_date`
 }
 
 type Agents struct {

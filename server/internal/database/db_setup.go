@@ -67,7 +67,7 @@ func SetupDB(db *DB) error {
 		external_ip	 	TEXT NOT NULL,
 		internal_ip 	TEXT NOT NULL,
 		is_elevated 	BOOLEAN NOT NULL,
-		arch			BOOLEAN NOT NULL,
+		arch			INTEGER NOT NULL,
 		pid 			INTEGER NOT NULL,
 		ppid			INTEGER NOT NULL,
 		process_path 	TEXT NOT NULL,
