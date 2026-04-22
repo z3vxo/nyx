@@ -32,6 +32,7 @@ type Listener struct {
 	Protocol   string
 	Host       string
 	Status     bool
+	certType   bool
 }
 
 type Listeners struct {
@@ -39,6 +40,14 @@ type Listeners struct {
 	ListenerMap  map[string]Listener
 	GetEndpoint  string
 	PostEndpoint string
+}
+
+func (ts *TeamServer) UpdateListenerMapStatus(id string, status bool) {
+	ts.Listeners.Mu.Lock()
+	entry := ts.Listeners.ListenerMap[id]
+	entry.Status = status
+	ts.Listeners.ListenerMap[id] = entry
+	ts.Listeners.Mu.Unlock()
 }
 
 func BuildListenerHttp(port int, protocol string, h *server.AgentHandler, host string, letsEncrypt bool) (*http.Server, error) {
@@ -77,28 +86,33 @@ func (ts *TeamServer) StartListenersFromDB() error {
 	h := &server.AgentHandler{DB: ts.db, Broker: ts.SSE}
 
 	for _, l := range ToStart {
-		ts.Listeners.Mu.Lock()
+
 		srv, err := BuildListenerHttp(l.Port, l.Protocol, h, l.Host, l.CertType)
 		if err != nil {
 			return err
 		}
+		ts.Listeners.Mu.Lock()
 		ts.Listeners.ListenerMap[l.Guid] = Listener{
 			httpServer: srv,
 			Port:       l.Port,
 			Name:       l.Name,
 			Host:       l.Host,
 			Protocol:   l.Protocol,
-			Status:     l.Status,
+			Status:     false,
+			certType:   l.CertType,
 		}
 		ts.Listeners.Mu.Unlock()
 
-		if err := ts.StartListener(l.Guid); err != nil {
-			ts.Listeners.Mu.Lock()
-			delete(ts.Listeners.ListenerMap, l.Guid)
-			ts.Listeners.Mu.Unlock()
-			fmt.Printf("failed starting listener %s: %v\n", l.Guid, err)
-			continue
+		if l.Status == true {
+			if err := ts.StartListener(l.Guid); err != nil {
+				ts.Listeners.Mu.Lock()
+				delete(ts.Listeners.ListenerMap, l.Guid)
+				ts.Listeners.Mu.Unlock()
+				fmt.Printf("failed starting listener %s: %v\n", l.Guid, err)
+				continue
+			}
 		}
+
 		ts.Logger.Info("listener started from db", "event", "listener-restore", "id", l.Guid, "protocol", l.Protocol, "port", l.Port)
 	}
 	return nil
@@ -115,21 +129,16 @@ func (ts *TeamServer) NewListener(port int, Protocol string, user, host string, 
 			return "", "", errors.New("already Listening on port")
 		}
 	}
-	srv, err := BuildListenerHttp(port, Protocol, &server.AgentHandler{DB: ts.db}, host, letsEncrypt)
-	if err != nil {
-		return "", "", err
-	}
 	ts.Listeners.ListenerMap[id] = Listener{
-		httpServer: srv,
-		Port:       port,
-		Name:       name,
-		Host:       host,
-		Protocol:   Protocol,
-		Status:     true,
+		Port:     port,
+		Name:     name,
+		Host:     host,
+		Protocol: Protocol,
+		Status:   false,
 	}
 	ts.Listeners.Mu.Unlock()
 
-	if err := ts.db.InsertListener(port, id, name, Protocol, host, letsEncrypt); err != nil {
+	if err := ts.db.InsertListener(port, id, name, Protocol, host, letsEncrypt, false); err != nil {
 		ts.Listeners.Mu.Lock()
 		delete(ts.Listeners.ListenerMap, id)
 		ts.Listeners.Mu.Unlock()
@@ -148,6 +157,19 @@ func (ts *TeamServer) StartListener(id string) error {
 		return errors.New("listener not found")
 	}
 
+	if l.Status == true {
+		return errors.New("listener already running!")
+	}
+
+	srv, err := BuildListenerHttp(l.Port, l.Protocol, &server.AgentHandler{DB: ts.db, Broker: ts.SSE}, l.Host, l.certType)
+	if err != nil {
+		return errors.New("Failed Creating server object")
+	}
+	ts.Listeners.Mu.Lock()
+	l.httpServer = srv
+	ts.Listeners.ListenerMap[id] = l
+	ts.Listeners.Mu.Unlock()
+
 	errCh := make(chan error, 1)
 	go func() {
 		var err error
@@ -161,6 +183,8 @@ func (ts *TeamServer) StartListener(id string) error {
 			errCh <- err
 		}
 	}()
+	ts.UpdateListenerMapStatus(id, true)
+	ts.db.UpdateListenerStatus(id, true)
 
 	select {
 	case err := <-errCh:
@@ -170,7 +194,7 @@ func (ts *TeamServer) StartListener(id string) error {
 	}
 }
 
-func (ts *TeamServer) StopListener(id string, user string) error {
+func (ts *TeamServer) DeleteListner(id string) error {
 	ts.Listeners.Mu.Lock()
 	l, ok := ts.Listeners.ListenerMap[id]
 	if !ok {
@@ -180,13 +204,42 @@ func (ts *TeamServer) StopListener(id string, user string) error {
 	delete(ts.Listeners.ListenerMap, id)
 	ts.Listeners.Mu.Unlock()
 
+	if l.Status == true {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		l.httpServer.Shutdown(ctx)
+	}
+
+	if err := ts.db.DeleteListener(id); err != nil {
+		fmt.Println(err)
+		return err
+	}
+	delete(ts.Listeners.ListenerMap, id)
+
+	return nil
+}
+
+func (ts *TeamServer) StopListener(id string, user string) error {
+	ts.Listeners.Mu.Lock()
+	l, ok := ts.Listeners.ListenerMap[id]
+	if !ok {
+		ts.Listeners.Mu.Unlock()
+		return errors.New("listener not found")
+	}
+	//delete(ts.Listeners.ListenerMap, id)
+	ts.Listeners.Mu.Unlock()
+
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	l.httpServer.Shutdown(ctx)
 
-	if err := ts.db.DeleteListener(id); err != nil {
+	if err := ts.db.UpdateListenerStatus(id, false); err != nil {
+		fmt.Println(err)
 		return err
 	}
+
+	ts.UpdateListenerMapStatus(id, false)
+
 	ts.Logger.Info("listener stopped", "event", "listener-stop", "id", id, "operator", user)
 
 	return nil

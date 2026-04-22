@@ -87,6 +87,16 @@ func (c *Client) ConnectToSSE() error {
 	return nil
 }
 
+func (c *Client) DoDelete(enpoint string, out any) error {
+	req, err := http.NewRequest("DELETE", fmt.Sprintf("%s/%s", c.Hostname, enpoint), nil)
+	if err != nil {
+		return err
+	}
+
+	c.Auth.Apply(req)
+	return c.Do(req, out)
+}
+
 func (c *Client) DoGet(endpoint string, out any) error {
 	req, err := http.NewRequest("GET", fmt.Sprintf("%s/%s", c.Hostname, endpoint), nil)
 	if err != nil {

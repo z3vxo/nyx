@@ -69,8 +69,10 @@ func (ts *TeamServer) Start() error {
 			r.Get("/rest/tasks/list/{guid}", ts.ListTasksHandler)
 
 			r.Get("/rest/listeners/list", ts.ListListenerHandler)
-			r.Post("/rest/listeners/start", ts.StartListenerHandler)
+			r.Post("/rest/listeners/new", ts.NewListenerHandler)
+			r.Post("/rest/listeners/start/{name}", ts.StartListenerHandler)
 			r.Post("/rest/listeners/stop/{name}", ts.StopListenerHandler)
+			r.Delete("/rest/listeners/delete/{name}", ts.DeleteListnerHandler)
 
 		})
 	})

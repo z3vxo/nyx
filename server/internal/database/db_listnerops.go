@@ -1,11 +1,13 @@
 package database
 
-import "fmt"
+import (
+	"fmt"
+)
 
-func (db *DB) InsertListener(port int, id, name, protocol, host string, certType bool) error {
+func (db *DB) InsertListener(port int, id, name, protocol, host string, certType, status bool) error {
 	query := `INSERT INTO listeners(port, guid, name, protocol, host, certType, status) VALUES(?, ?, ?, ?, ?, ?, ?)`
 
-	_, err := db.conn.Exec(query, port, id, name, protocol, host, certType, 1)
+	_, err := db.conn.Exec(query, port, id, name, protocol, host, certType, status)
 	if err != nil {
 		fmt.Printf("Failed Insert: %v", err)
 		return err
@@ -34,7 +36,7 @@ type ListenersToStart struct {
 }
 
 func (db *DB) GetListeners() ([]ListenersToStart, error) {
-	q := `SELECT guid, port, protocol, name, host, certType, status FROM listeners WHERE status=1`
+	q := `SELECT guid, port, protocol, name, host, certType, status FROM listeners`
 
 	rows, err := db.conn.Query(q)
 	if err != nil {
@@ -55,4 +57,13 @@ func (db *DB) GetListeners() ([]ListenersToStart, error) {
 	}
 
 	return Entrys, nil
+}
+
+func (db *DB) UpdateListenerStatus(id string, status bool) error {
+	q := `UPDATE listeners SET status = ? WHERE guid = ?`
+	_, err := db.conn.Exec(q, status, id)
+	if err != nil {
+		return err
+	}
+	return nil
 }

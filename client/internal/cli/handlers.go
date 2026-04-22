@@ -132,12 +132,34 @@ func (c *CLI) ParseListenerCmd(args []string) {
 			c.ui.Send(ui.BAD.Sprint("Must provide listener name"))
 		}
 		c.StopListener(args[1])
+	case "delete":
+		if args[1] == "" {
+			c.ui.Send(ui.BAD.Sprint("Must provide listener name"))
+		}
+		c.DeleteListeners(args[1])
 	case "start":
-		c.StartListener(args[1:])
+		if args[1] == "" {
+			c.ui.Send(ui.BAD.Sprint("Must provide listener name"))
+		}
+		c.StartListener(args[1])
+
+	case "new":
+		c.NewListener(args[1:])
 		//c.StopListener()
 	default:
 		c.ui.Send(ui.BAD.Sprintf("Unknown subcommand: %s", args[0]))
 	}
+}
+
+func (c *CLI) DeleteListeners(name string) {
+	endpoint := fmt.Sprintf("ts/rest/listeners/delete/%s", name)
+	if err := c.http.DoDelete(endpoint, nil); err != nil {
+		c.ui.Send(ui.WARN.Sprintf("Failed Deleting listener: %s", err))
+		return
+	}
+	c.ui.Send(ui.GOOD.Sprintf("Deleted Listener %s", name))
+	return
+
 }
 
 func (c *CLI) StopListener(name string) {
@@ -172,14 +194,28 @@ func (c *CLI) ListListners() {
 	fmt.Fprintln(w, "--------\t----\t--------\t----\t------")
 
 	for _, i := range r.Listeners {
+		status := "RUNNING"
+		if i.Status == false {
+			status = "STOPPED"
+		}
 		fmt.Fprintf(w, "%s\t%d\t%s\t%s\t%s\n",
-			i.Name, i.Port, i.Protocol, i.Host, "RUNNING")
+			i.Name, i.Port, i.Protocol, i.Host, status)
 	}
 	w.Flush()
 	c.ui.Send(buf.String())
 }
 
-func (c *CLI) StartListener(args []string) {
+func (c *CLI) StartListener(name string) {
+	endpoint := fmt.Sprintf("ts/rest/listeners/start/%s", name)
+	if err := c.http.DoPost(endpoint, nil, nil); err != nil {
+		c.ui.Send(ui.WARN.Sprintf("Failed Deleting listener: %s", err))
+		return
+	}
+	c.ui.Send(ui.GOOD.Sprintf("Started Listener %s", name))
+	return
+}
+
+func (c *CLI) NewListener(args []string) {
 	fs := pflag.NewFlagSet("start", pflag.ContinueOnError)
 	port := fs.IntP("port", "p", 443, "")
 	proto := fs.StringP("type", "t", "http", "")
@@ -208,7 +244,7 @@ func (c *CLI) StartListener(args []string) {
 		return
 	}
 	var StartResp ListenerStartResp
-	if err := c.http.DoPost("ts/rest/listeners/start", body, &StartResp); err != nil {
+	if err := c.http.DoPost("ts/rest/listeners/new", body, &StartResp); err != nil {
 		c.ui.Send(ui.BAD.Sprintf("Error Starting Listener: %v", err))
 		return
 

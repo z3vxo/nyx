@@ -30,3 +30,13 @@ func GenSelSigned(host string) (tls.Certificate, error) {
 
 	return tls.X509KeyPair(certPEM, keyPEM)
 }
+
+// func NewLetsEncrypt(domain string) *autocert.Manager {
+
+// 	return &autocert.Manager{
+// 		Cache:      autocert.DirCache("/var/certs/cache"),
+// 		Prompt:     autocert.AcceptTOS,
+// 		HostPolicy: autocert.HostWhitelist(domain),
+// 		Email:      fmt.Sprintf("admin@%s", domain),
+// 	}
+// }
